@@ -12,8 +12,7 @@
  * - Manages app-level status, loading, error and success UI.
  * - Handles form submission without backend/API calls.
  * - Registers the service worker when supported.
- * - Keeps integration points ready for future modules without importing
- *   modules that do not exist yet.
+ * - Keeps integration points ready for future modules.
  *
  * No external dependencies.
  */
@@ -58,7 +57,8 @@ const STATUS_MESSAGES = Object.freeze({
   mediaReady: "मीडिया तैयार है।",
   mediaCleared: "मीडिया हटा दिया गया है।",
   previewUnavailable:
-    "Canvas Renderer अभी उपलब्ध नहीं है। Preview rendering अगले module के जुड़ने पर सक्रिय होगा।",
+    "Preview renderer अभी उपलब्ध नहीं है। मीडिया का native preview उपलब्ध होने पर वहीं से playback किया जा सकता है।",
+  previewReady: "Preview तैयार है।",
   formPrevented:
     "यह ऐप browser में locally काम करता है। अभी server submission आवश्यक नहीं है।",
   serviceWorkerUnsupported:
@@ -76,9 +76,6 @@ const CAPABILITY_LABELS = Object.freeze({
 
 /**
  * Centralized mutable application state.
- *
- * DOM remains the source of visual truth; this state stores application
- * coordination data that should not be unnecessarily duplicated into HTML.
  */
 const appState = {
   initialized: false,
@@ -183,7 +180,7 @@ async function initApp() {
 /**
  * Resolve all known DOM nodes once.
  *
- * Missing optional nodes are allowed and must never crash the application.
+ * Missing optional nodes are allowed.
  */
 function cacheElements() {
   return {
@@ -228,8 +225,6 @@ function cacheElements() {
 
 /**
  * Attach application-level event listeners.
- *
- * Listeners are registered exactly once because initApp() is guarded.
  */
 function bindAppEvents() {
   if (!elements) {
@@ -271,10 +266,26 @@ function bindAppEvents() {
       );
     });
   }
+
+  /**
+   * Keep app-level preview actions synchronized with media removal.
+   */
+  if (elements.mediaRemoveButton instanceof HTMLButtonElement) {
+    const handler = handleMediaRemoveButtonClick;
+
+    elements.mediaRemoveButton.addEventListener("click", handler);
+
+    cleanupCallbacks.push(() => {
+      elements?.mediaRemoveButton?.removeEventListener(
+        "click",
+        handler
+      );
+    });
+  }
 }
 
 /**
- * Initialize the only currently available functional module.
+ * Media module initialization.
  */
 function initializeMediaModule() {
   appState.modules.media = "initializing";
@@ -298,7 +309,10 @@ function initializeMediaModule() {
         "मीडिया मॉड्यूल प्रारंभ नहीं हो सका।";
 
       showError(message);
-      logError("Media module initialization failed.", result?.error);
+      logError(
+        "Media module initialization failed.",
+        result?.error
+      );
 
       return;
     }
@@ -322,11 +336,21 @@ function initializeMediaModule() {
 }
 
 /**
- * Preview controls deliberately remain disabled because canvas-renderer.js
- * does not exist yet. No fake preview behavior is implemented.
+ * Preview controls.
+ *
+ * These controls are only useful when a renderer/action exists.
+ * Native video controls inside media.js remain independent from this.
  */
 function initializePreviewControls() {
-  setPreviewControlsEnabled(false);
+  const hasCanvasRenderer =
+    appState.modules.canvasRenderer === "ready";
+
+  setPreviewControlsEnabled(hasCanvasRenderer);
+
+  if (hasCanvasRenderer) {
+    setPreviewStatus(STATUS_MESSAGES.previewReady);
+    return;
+  }
 
   setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
 }
@@ -337,32 +361,36 @@ function initializePreviewControls() {
 function handleMediaChange(event) {
   syncMediaState();
 
-  const reason = event?.reason || "";
+  const reason = normalizeString(event?.reason);
 
   if (reason === "ready") {
     setStatus(STATUS_MESSAGES.mediaReady);
     clearError();
+
+    updatePreviewControlsFromMediaState();
     return;
   }
 
   if (reason === "cleared") {
     setStatus(STATUS_MESSAGES.mediaCleared);
+    updatePreviewControlsFromMediaState();
     return;
   }
 
   if (reason === "validation-error") {
     setStatus("मीडिया फ़ाइल की जाँच पूरी नहीं हो सकी।");
+    updatePreviewControlsFromMediaState();
     return;
   }
 
   if (reason === "preview-error") {
     setStatus("मीडिया प्रीव्यू में समस्या आई।");
+    updatePreviewControlsFromMediaState();
   }
 }
 
 /**
- * Handles media-module errors without allowing them to escape into
- * application-level event handling.
+ * Handles media-module errors.
  */
 function handleMediaError(event) {
   const message =
@@ -386,7 +414,19 @@ function handleMediaFitModeChange(event) {
 }
 
 /**
- * Keep appState.media synchronized with media.js.
+ * Media remove button synchronization.
+ *
+ * media.js remains the owner of the actual file-removal operation.
+ */
+function handleMediaRemoveButtonClick() {
+  window.setTimeout(() => {
+    syncMediaState();
+    updatePreviewControlsFromMediaState();
+  }, 0);
+}
+
+/**
+ * Synchronize appState.media with media.js.
  */
 function syncMediaState() {
   if (!mediaModule) {
@@ -398,19 +438,38 @@ function syncMediaState() {
 
     appState.media = {
       initialized: true,
-      status: mediaState.status || "idle",
-      hasMedia: Boolean(mediaState.hasMedia),
-      kind: mediaState.kind || null,
-      fileName: mediaState.fileName || "",
-      fitMode: mediaState.fitMode || "",
+      status: mediaState?.status || "idle",
+      hasMedia: Boolean(mediaState?.hasMedia),
+      kind: mediaState?.kind || null,
+      fileName: mediaState?.fileName || "",
+      fitMode: mediaState?.fitMode || "",
     };
 
-    /*
-     * Preview renderer is intentionally not activated here.
-     * That responsibility belongs to canvas-renderer.js.
-     */
+    updatePreviewControlsFromMediaState();
   } catch (error) {
     logError("Could not synchronize media state.", error);
+  }
+}
+
+/**
+ * Update preview actions based on actual current state.
+ *
+ * Since canvas-renderer.js is not yet implemented, these buttons remain
+ * disabled unless that module becomes available.
+ *
+ * Native HTML video controls are not affected.
+ */
+function updatePreviewControlsFromMediaState() {
+  const rendererReady =
+    appState.modules.canvasRenderer === "ready";
+
+  const shouldEnable =
+    rendererReady && appState.media.hasMedia;
+
+  setPreviewControlsEnabled(shouldEnable);
+
+  if (!shouldEnable && !appState.media.hasMedia) {
+    setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
   }
 }
 
@@ -428,20 +487,27 @@ function handleFormSubmit(event) {
 
 /**
  * Future canvas-renderer integration point.
- *
- * Kept as a separate handler so the preview workflow can be upgraded
- * without changing the rest of the controller.
  */
 function handlePreviewPlayRequest() {
-  setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
-  setStatus(STATUS_MESSAGES.previewUnavailable);
+  if (appState.modules.canvasRenderer !== "ready") {
+    setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
+    setStatus(STATUS_MESSAGES.previewUnavailable);
+    return;
+  }
+
+  setPreviewStatus(STATUS_MESSAGES.previewReady);
 }
 
 /**
  * Future canvas-renderer reset integration point.
  */
 function handlePreviewResetRequest() {
-  setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
+  if (appState.modules.canvasRenderer !== "ready") {
+    setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
+    return;
+  }
+
+  setPreviewStatus(STATUS_MESSAGES.previewReady);
 }
 
 /**
@@ -451,6 +517,7 @@ function detectCapabilities() {
   const canvas = detectCanvasSupport();
   const speech = detectSpeechSupport();
   const mediaRecorder = detectMediaRecorderSupport();
+
   const webm = detectMediaRecorderMimeSupport([
     'video/webm;codecs="vp9,opus"',
     'video/webm;codecs="vp8,opus"',
@@ -495,10 +562,11 @@ function detectCanvasSupport() {
       return false;
     }
 
-    return Boolean(
-      canvas.getContext &&
-        canvas.getContext("2d")
-    );
+    if (typeof canvas.getContext !== "function") {
+      return false;
+    }
+
+    return Boolean(canvas.getContext("2d"));
   } catch (error) {
     logError("Canvas capability detection failed.", error);
     return false;
@@ -542,7 +610,7 @@ function detectMediaRecorderMimeSupport(mimeTypes) {
 }
 
 /**
- * Render browser capability information into existing HTML only.
+ * Render browser capability information.
  */
 function renderCapabilityStatus(capabilities) {
   setCapabilityText(
@@ -582,7 +650,7 @@ function setCapabilityText(element, supported) {
 }
 
 /**
- * Update the browser-status chip using capability data.
+ * Update browser status.
  */
 function renderBrowserStatus(capabilities) {
   const element = elements?.browserStatus;
@@ -605,7 +673,7 @@ function renderBrowserStatus(capabilities) {
 }
 
 /**
- * Register the existing service-worker.js when supported.
+ * Register service worker.
  */
 async function initializeServiceWorker() {
   if (!elements) {
@@ -634,42 +702,33 @@ async function initializeServiceWorker() {
     if (registration) {
       appState.serviceWorker.status = "registered";
 
-      /*
-       * Registration success is intentionally a low-priority status.
-       * It does not overwrite a more important media/error message.
-       */
-      setSuccess(STATUS_MESSAGES.serviceWorkerReady);
+      showSuccess(STATUS_MESSAGES.serviceWorkerReady);
     }
   } catch (error) {
     appState.serviceWorker.status = "error";
 
-    /*
-     * PWA failure must not stop the editor itself.
-     */
-    logError("Service worker registration failed.", error);
+    logError(
+      "Service worker registration failed.",
+      error
+    );
   }
 }
 
 /**
- * Initial UI synchronization after all currently available modules
- * have been initialized.
+ * Initial UI synchronization.
  */
 function renderInitialApplicationState() {
   syncMediaState();
 
-  setPreviewControlsEnabled(false);
-  setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
+  updatePreviewControlsFromMediaState();
 
-  if (elements?.mediaRemoveButton instanceof HTMLButtonElement) {
-    /*
-     * media.js owns the actual enabled/disabled lifecycle of this button.
-     * Do not override it here.
-     */
+  if (!appState.media.hasMedia) {
+    setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
   }
 }
 
 /**
- * Disable or enable preview controls in one place.
+ * Enable/disable preview controls.
  */
 function setPreviewControlsEnabled(enabled) {
   if (elements?.previewPlayButton instanceof HTMLButtonElement) {
@@ -697,8 +756,6 @@ function setStatus(message) {
 
 /**
  * User-facing error helper.
- *
- * Uses textContent only.
  */
 function showError(message) {
   const normalized =
@@ -795,8 +852,7 @@ function setPreviewStatus(message) {
   const normalized = normalizeString(message);
 
   if (elements?.previewStatus instanceof HTMLElement) {
-    elements.previewStatus.textContent =
-      normalized || "";
+    elements.previewStatus.textContent = normalized || "";
   }
 }
 
@@ -816,9 +872,6 @@ function getUserFacingErrorMessage(error, fallback) {
 
 /**
  * Development diagnostics only.
- *
- * This is intentionally console-only and never exposes technical errors
- * directly into the visible UI.
  */
 function logError(message, error) {
   if (
@@ -846,19 +899,17 @@ function normalizeString(value) {
 }
 
 /**
- * Best-effort cleanup hook.
- *
- * The app currently does not expose a public destroy API because the
- * page-level controller is intended to live for the lifetime of the page.
- * This internal function exists to keep resource cleanup explicit and
- * make future hot-reload/test integration safer.
+ * Internal cleanup hook.
  */
 function cleanupApp() {
   for (const cleanup of cleanupCallbacks.splice(0)) {
     try {
       cleanup();
     } catch (error) {
-      logError("Application cleanup callback failed.", error);
+      logError(
+        "Application cleanup callback failed.",
+        error
+      );
     }
   }
 
@@ -866,7 +917,10 @@ function cleanupApp() {
     try {
       mediaModule.destroy();
     } catch (error) {
-      logError("Media module cleanup failed.", error);
+      logError(
+        "Media module cleanup failed.",
+        error
+      );
     }
   }
 
@@ -876,31 +930,31 @@ function cleanupApp() {
   appState.initializing = false;
 }
 
-/*
- * Do not intercept beforeunload/unload unnecessarily.
- *
- * The browser itself will release page-scoped resources. Explicit cleanup
- * remains available internally without adding lifecycle listeners that can
- * interfere with navigation or bfcache.
- */
-
 /**
  * Bootstrap.
- *
- * ES modules execute after the document has been parsed when the module
- * script is placed in the document head with normal browser module behavior,
- * but this function also defensively handles an unexpectedly early execution.
  */
 function bootstrap() {
+  if (typeof document === "undefined") {
+    return;
+  }
+
   if (document.readyState === "loading") {
     const handler = () => {
-      document.removeEventListener("DOMContentLoaded", handler);
+      document.removeEventListener(
+        "DOMContentLoaded",
+        handler
+      );
+
       void initApp();
     };
 
-    document.addEventListener("DOMContentLoaded", handler, {
-      once: true,
-    });
+    document.addEventListener(
+      "DOMContentLoaded",
+      handler,
+      {
+        once: true,
+      }
+    );
 
     return;
   }
