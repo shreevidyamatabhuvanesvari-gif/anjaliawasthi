@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Swar Srijan Studio</title>
+  <style>
+    :root {
+      --bg: #0b1220; --border: #334155; --text: #f8fafc; --muted: #94a3b8;
+      --accent: #22c55e; --danger: #ef4444; --blue: #38bdf8;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; min-height: 100vh;
+      background: linear-gradient(180deg, #020617 0%, var(--bg) 100%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Devanagari", "Nirmala UI", sans-serif;
+    }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .page {
+      width: min(1180px, calc(100% - 24px));
+      margin: 0 auto; padding: 20px 0 36px;
+    }
+    header {
+      margin-bottom: 18px; padding: 18px;
+      border: 1px solid var(--border); border-radius: 18px;
+      background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px);
+    }
+    h1 { margin:0 0 6px; font-size: clamp(1.55rem, 4vw, 2.2rem); line-height:1.15; }
+    .subtitle { margin:0; color: var(--muted); line-height:1.55; }
+    .layout {
+      display: grid; grid-template-columns: minmax(0,1.1fr) minmax(320px,0.9fr);
+      gap: 18px; align-items: start;
+    }
+    .panel {
+      border:1px solid var(--border); border-radius:18px; background:rgba(15,23,42,0.96);
+      padding:16px; box-shadow:0 16px 40px rgba(0,0,0,0.18);
+    }
+    .panel + .panel { margin-top: 18px; }
+    .panel h2 { margin:0 0 12px; font-size:1.08rem; }
+    .field { margin-bottom:14px; }
+    .field:last-child { margin-bottom:0; }
+    label {
+      display:block; margin-bottom:7px;
+      color:#e2e8f0; font-weight:700; font-size:0.94rem;
+    }
+    textarea, input[type="color"], input[type="range"] { width:100%; }
+    textarea {
+      min-height:96px; resize:vertical;
+      padding:11px 12px; border:1px solid var(--border);
+      border-radius:12px; background:#0b1020; color:var(--text); outline:none;
+    }
+    textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(56,189,248,0.14);
+    }
+    input[type="file"] {
+      display:block; width:100%;
+      padding:10px; border:1px dashed #475569; border-radius:12px;
+      background:#0b1020; color:#cbd5e1;
+    }
+    input[type="color"] {
+      height:44px; padding:3px;
+      border:1px solid var(--border); border-radius:10px;
+      background:#0b1020;
+    }
+    input[type="range"] { accent-color: var(--accent); }
+    .range-row, .button-row, .two-col { display:grid; gap:10px; }
+    .range-row { grid-template-columns: 1fr auto; align-items:center; }
+    .range-value {
+      min-width:74px; text-align:right; color:#cbd5e1; font-size:0.9rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .button-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .two-col { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .btn {
+      min-height:44px; padding:10px 12px;
+      border:1px solid var(--border); border-radius:11px;
+      background:#182235; color:var(--text);
+      transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+      touch-action: manipulation;
+    }
+    .btn:hover { transform:translateY(-1px); background:#223047; border-color:#475569; }
+    .btn.primary { background:#166534; border-color:#22c55e; }
+    .btn.primary:hover { background:#15803d; }
+    .btn.danger { background:#4c1515; border-color:#ef4444; }
+    .btn.blue { background:#0c4a6e; border-color:#38bdf8; }
+    .btn:disabled { opacity:0.55; cursor:not-allowed; transform:none; }
+    .btn:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+    .preview-stage {
+      display:flex; justify-content:center; align-items:center;
+      min-height:520px; padding:18px;
+      border:1px dashed #475569; border-radius:16px;
+      background:
+        linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255,255,255,0.03) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.03) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.03) 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+    }
+    .preview-frame {
+      position:relative; width:min(100%,360px); aspect-ratio:9/16;
+      overflow:hidden; border-radius:18px; border:1px solid #475569; background:#000;
+      box-shadow:0 20px 55px rgba(0,0,0,0.45);
+    }
+    .preview-media {
+      position:absolute; inset:0; width:100%; height:100%; object-fit:contain;
+      background:#000; display:none;
+    }
+    .preview-placeholder {
+      position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+      padding:24px; text-align:center; color:#64748b; line-height:1.6;
+    }
+    .file-info {
+      margin-top:12px; padding:11px 12px;
+      border:1px solid var(--border); border-radius:12px;
+      background:#0b1020; color:#cbd5e1; font-size:0.9rem; line-height:1.5;
+      overflow-wrap:anywhere;
+    }
+    .status {
+      min-height:22px; margin-top:9px; color:var(--muted); font-size:0.9rem;
+    }
+    .check-row {
+      display:flex; align-items:center; gap:9px; color:#e2e8f0; user-select:none;
+    }
+    .check-row input { width:18px; height:18px; accent-color:var(--accent); }
+    /* ===== TICKER ===== */
+    .ticker-overlay {
+      position:absolute; right:0; bottom:0; left:0; z-index:50;
+      display:none; height:42px; overflow:hidden; align-items:stretch;
+      background:#111827; color:#fff; border-top:1px solid rgba(255,255,255,0.22);
+      pointer-events:none;
+    }
+    .ticker-overlay.visible { display:flex; }
+    .ticker-overlay.paused .ticker-track { animation-play-state: paused; }
+    .ticker-label {
+      flex:0 0 92px; display:flex; align-items:center; justify-content:center;
+      padding:0 8px; background:#dc2626; color:#fff; font-size:12px; font-weight:900;
+      letter-spacing:0.04em;
+    }
+    .ticker-window {
+      position:relative; flex:1 1 auto; min-width:0; overflow:hidden;
+      display:flex; align-items:center; background:#111827;
+    }
+    .ticker-track {
+      display:inline-flex; align-items:center; min-width: max-content; white-space:nowrap;
+      transform: translateX(100%); animation-name:tickerMoveRightToLeft;
+      animation-duration:14s; animation-timing-function: linear;
+      animation-iteration-count: infinite; animation-play-state: running;
+      will-change: transform;
+    }
+    .ticker-message {
+      display:inline-block; padding-right:90px; color:#fff; font-size:16px;
+      font-weight:800; line-height:1;
+    }
+    .ticker-separator {
+      flex:0 0 auto; margin-right:90px; color:#facc15; font-size:10px;
+    }
+    @keyframes tickerMoveRightToLeft {
+      from { transform: translateX(100%); }
+      to   { transform: translateX(-100%); }
+    }
+    .helper { margin-top:6px; color:#64748b; font-size:0.78rem; line-height:1.45; }
+    .footer-note { margin-top:18px; text-align:center; color:#64748b; font-size:0.85rem; }
+    .capture-download { display:none; }
+    .capture-download.visible { display:block; margin-top:10px; text-align:center; }
+    @media (max-width:900px) {
+      .layout { grid-template-columns:1fr; }
+      .preview-stage { min-height:480px; }
+    }
+    @media (max-width:540px) {
+      .page { width:min(100% - 14px, 1180px); padding-top:10px; }
+      .panel, header { border-radius:14px; }
+      .preview-stage { min-height:420px; padding:10px; }
+      .preview-frame { width:min(100%,300px); }
+      .button-row, .two-col { grid-template-columns:1fr; }
+      .ticker-label { flex-basis:78px; }
+      .ticker-message { padding-right:62px; }
+      .ticker-separator { margin-right:62px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>🎙️ Swar Srijan Studio</h1>
+      <p class="subtitle">फोटो/वीडियो अपलोड करें, 9:16 रील प्रीव्यू देखें और न्यूज़ टिकर को तुरंत कस्टमाइज़ करें।</p>
+    </header>
+
+    <main class="layout">
+      <section>
+        <!-- मीडिया अपलोड -->
+        <div class="panel">
+          <h2>📁 मीडिया अपलोड</h2>
+          <div class="field">
+            <label for="mediaInput">फोटो या वीडियो चुनें</label>
+            <input id="mediaInput" type="file" accept="image/*,video/*" />
+            <div class="helper">समर्थित प्रकार: सामान्य image/* और video/* फ़ाइलें</div>
+          </div>
+          <div class="button-row">
+            <button id="fitButton" class="btn primary" type="button">फ्रेम भरें</button>
+            <button id="containButton" class="btn" type="button">पूरा दिखाएँ</button>
+          </div>
+          <div class="button-row" style="margin-top:10px;">
+            <button id="fullscreenButton" class="btn blue" type="button">⛶ फुल स्क्रीन</button>
+            <button id="removeButton" class="btn danger" type="button">हटाएँ</button>
+          </div>
+          <!-- नई कैप्चर सुविधा -->
+          <div class="button-row" style="margin-top:10px;">
+            <button id="captureButton" class="btn primary" type="button">🎥 रील कैप्चर करें</button>
+            <a id="captureDownload" class="btn blue capture-download" href="#" download="swar-srijan-reel.webm">⬇️ कैप्चर डाउनलोड करें</a>
+          </div>
+          <div id="fileInfo" class="file-info" aria-live="polite">अभी कोई मीडिया चुना नहीं गया।</div>
+          <div id="statusText" class="status" aria-live="polite"></div>
+        </div>
+
+        <!-- टिकर सेटिंग्स -->
+        <div class="panel">
+          <h2>📰 न्यूज़ टिकर</h2>
+          <div class="field">
+            <label for="tickerTextInput">टिकर टेक्स्ट</label>
+            <textarea id="tickerTextInput" placeholder="यहाँ अपना न्यूज़ संदेश लिखें…">आपकी महत्वपूर्ण सूचना यहाँ लगातार चलेगी</textarea>
+          </div>
+          <div class="field">
+            <label for="tickerSpeedInput">टिकर गति</label>
+            <div class="range-row">
+              <input id="tickerSpeedInput" type="range" min="30" max="180" step="5" value="90" />
+              <span id="tickerSpeedValue" class="range-value">90 सेकंड</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="tickerFontSizeInput">फ़ॉन्ट आकार</label>
+            <div class="range-row">
+              <input id="tickerFontSizeInput" type="range" min="10" max="28" step="1" value="16" />
+              <span id="tickerFontSizeValue" class="range-value">16 px</span>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label for="tickerBackgroundInput">टिकर बैकग्राउंड</label>
+              <input id="tickerBackgroundInput" type="color" value="#111827" />
+              <div id="tickerBackgroundValue" class="helper">#111827</div>
+            </div>
+            <div class="field">
+              <label for="tickerTextColorInput">टेक्स्ट रंग</label>
+              <input id="tickerTextColorInput" type="color" value="#ffffff" />
+              <div id="tickerTextColorValue" class="helper">#ffffff</div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="check-row" for="tickerBoldInput">
+              <input id="tickerBoldInput" type="checkbox" checked />
+              टेक्स्ट बोल्ड रखें
+            </label>
+          </div>
+          <div class="button-row">
+            <button id="tickerToggleButton" class="btn primary" type="button">टिकर बंद करें</button>
+            <button id="tickerPauseButton" class="btn" type="button">टिकर रोकें</button>
+          </div>
+          <div class="helper">टिकर मीडिया के निचले हिस्से में overlay के रूप में दिखाई देगा।</div>
+        </div>
+      </section>
+
+      <!-- प्रीव्यू -->
+      <section class="panel">
+        <h2>📱 9:16 रील प्रीव्यू</h2>
+        <div class="preview-stage">
+          <div id="previewFrame" class="preview-frame" aria-label="रील प्रीव्यू">
+            <div id="placeholder" class="preview-placeholder">यहाँ आपकी फोटो या वीडियो 9:16 फ़ॉर्मेट में दिखाई देगा।</div>
+            <img id="imagePreview" class="preview-media" alt="अपलोड की गई फोटो का प्रीव्यू" />
+            <video id="videoPreview" class="preview-media" controls playsinline webkit-playsinline preload="metadata"></video>
+            <div id="tickerOverlay" class="ticker-overlay" aria-label="न्यूज़ टिकर">
+              <div id="tickerLabel" class="ticker-label">BREAKING</div>
+              <div id="tickerWindow" class="ticker-window">
+                <div id="tickerTrack" class="ticker-track">
+                  <span id="tickerMessageOne" class="ticker-message">आपकी महत्वपूर्ण सूचना यहाँ लगातार चलेगी</span>
+                  <span class="ticker-separator" aria-hidden="true">◆</span>
+                  <span id="tickerMessageTwo" class="ticker-message">आपकी महत्वपूर्ण सूचना यहाँ लगातार चलेगी</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="file-info" style="margin-top:12px;"><strong>स्टेटस:</strong> <span id="previewStateText">प्रीव्यू तैयार है। मीडिया अपलोड करें।</span></div>
+      </section>
+    </main>
+
+    <div class="footer-note">Swar Srijan Studio · Front-end prototype · बाहरी API के बिना</div>
+  </div>
+
+  <script>
+    "use strict";
+    // DOM elements
+    const mediaInput = document.getElementById("mediaInput");
+    const imagePreview = document.getElementById("imagePreview");
+    const videoPreview = document.getElementById("videoPreview");
+    const placeholder = document.getElementById("placeholder");
+    const previewFrame = document.getElementById("previewFrame");
+    const fileInfo = document.getElementById("fileInfo");
+    const statusText = document.getElementById("statusText");
+    const previewStateText = document.getElementById("previewStateText");
+    const fitButton = document.getElementById("fitButton");
+    const containButton = document.getElementById("containButton");
+    const fullscreenButton = document.getElementById("fullscreenButton");
+    const removeButton = document.getElementById("removeButton");
+    const captureButton = document.getElementById("captureButton");
+    const captureDownload = document.getElementById("captureDownload");
+    const tickerOverlay = document.getElementById("tickerOverlay");
+    const tickerTrack = document.getElementById("tickerTrack");
+    const tickerMessageOne = document.getElementById("tickerMessageOne");
+    const tickerMessageTwo = document.getElementById("tickerMessageTwo");
+    const tickerTextInput = document.getElementById("tickerTextInput");
+    const tickerSpeedInput = document.getElementById("tickerSpeedInput");
+    const tickerSpeedValue = document.getElementById("tickerSpeedValue");
+    const tickerFontSizeInput = document.getElementById("tickerFontSizeInput");
+    const tickerFontSizeValue = document.getElementById("tickerFontSizeValue");
+    const tickerBackgroundInput = document.getElementById("tickerBackgroundInput");
+    const tickerBackgroundValue = document.getElementById("tickerBackgroundValue");
+    const tickerTextColorInput = document.getElementById("tickerTextColorInput");
+    const tickerTextColorValue = document.getElementById("tickerTextColorValue");
+    const tickerBoldInput = document.getElementById("tickerBoldInput");
+    const tickerToggleButton = document.getElementById("tickerToggleButton");
+    const tickerPauseButton = document.getElementById("tickerPauseButton");
+
+    // State
+    let currentMediaType = null;
+    let currentObjectUrl = null;
+    let objectFitMode = "cover";
+    let tickerEnabled = true, tickerPaused = false;
+
+    let mediaRecorder = null, recordedChunks = [], captureCanvas = null, captureContext = null, captureStream = null;
+    let captureAnimationFrame = 0, captureTimer = null, captureTickerProgress = 0, lastCaptureFrameTime = 0;
+    let videoAudioContext = null, videoAudioSource = null, videoAudioDestination = null, videoAudioConnected = false;
+    let lastCaptureUrl = null;
+
+    const CAPTURE_WIDTH = 720, CAPTURE_HEIGHT = 1280, CAPTURE_FPS = 30;
+    const IMAGE_CAPTURE_DURATION = 10000; // 10 सेकंड
+
+    // Helpers
+    function setStatus(msg) { statusText.textContent = msg; }
+    function setPreviewState(msg) { previewStateText.textContent = msg; }
+    function formatBytes(bytes) {
+      if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+      const units = ["B","KB","MB","GB"];
+      const exp = Math.min(Math.floor(Math.log(bytes)/Math.log(1024)), units.length-1);
+      const value = bytes/Math.pow(1024, exp);
+      return `${value.toFixed(exp===0?0:2)} ${units[exp]}`;
+    }
+    function revokeObjectUrl() {
+      if (currentObjectUrl) { URL.revokeObjectURL(currentObjectUrl); currentObjectUrl = null; }
+    }
+    function applyObjectFit() {
+      imagePreview.style.objectFit = objectFitMode;
+      videoPreview.style.objectFit = objectFitMode;
+    }
+    function updateTickerVisibility() {
+      const show = tickerEnabled && currentMediaType;
+      tickerOverlay.classList.toggle("visible", !!show);
+      tickerOverlay.classList.toggle("paused", tickerPaused);
+      tickerPauseButton.textContent = tickerPaused ? "टिकर चलाएँ" : "टिकर रोकें";
+      tickerToggleButton.textContent = tickerEnabled ? "टिकर बंद करें" : "टिकर चालू करें";
+    }
+    function getTickerText() {
+      const text = tickerTextInput.value.trim();
+      return text || "आपकी महत्वपूर्ण सूचना यहाँ लगातार चलेगी";
+    }
+    function updateTickerText() {
+      const txt = getTickerText();
+      tickerMessageOne.textContent = txt;
+      tickerMessageTwo.textContent = txt;
+    }
+    function updateTickerSpeed() {
+      const speed = Number(tickerSpeedInput.value) || 0;
+      tickerTrack.style.animationDuration = `${speed}s`;
+      tickerSpeedValue.textContent = `${speed} सेकंड`;
+    }
+    function updateTickerFontSize() {
+      const size = Number(tickerFontSizeInput.value) || 0;
+      tickerMessageOne.style.fontSize = `${size}px`;
+      tickerMessageTwo.style.fontSize = `${size}px`;
+      tickerFontSizeValue.textContent = `${size} px`;
+    }
+    function updateTickerBackground() {
+      const color = tickerBackgroundInput.value;
+      tickerOverlay.style.backgroundColor = color;
+      tickerWindow.style.backgroundColor = color;
+      tickerBackgroundValue.textContent = color;
+    }
+    function updateTickerTextColor() {
+      const color = tickerTextColorInput.value;
+      tickerMessageOne.style.color = color;
+      tickerMessageTwo.style.color = color;
+      tickerTextColorValue.textContent = color;
+    }
+    function updateTickerBold() {
+      const w = tickerBoldInput.checked ? "800" : "500";
+      tickerMessageOne.style.fontWeight = w;
+      tickerMessageTwo.style.fontWeight = w;
+    }
+    function hideAllMedia() {
+      imagePreview.style.display = "none";
+      videoPreview.style.display = "none";
+      videoPreview.pause();
+      placeholder.style.display = "flex";
+    }
+    function resetPreview() {
+      if (mediaRecorder) stopCapture(true);
+      videoPreview.pause();
+      revokeObjectUrl();
+      currentMediaType = null;
+      mediaInput.value = "";
+      imagePreview.removeAttribute("src");
+      videoPreview.removeAttribute("src"); videoPreview.load();
+      hideAllMedia(); applyObjectFit();
+      fileInfo.textContent = "अभी कोई मीडिया चुना नहीं गया।";
+      setStatus("");
+      setPreviewState("प्रीव्यू तैयार है। मीडिया अपलोड करें।");
+      captureDownload.classList.remove("visible");
+      if (lastCaptureUrl) { URL.revokeObjectURL(lastCaptureUrl); lastCaptureUrl = null; }
+      updateTickerVisibility();
+    }
+    function showImage(file) {
+      if (mediaRecorder) stopCapture(true);
+      videoPreview.pause(); revokeObjectUrl();
+      currentObjectUrl = URL.createObjectURL(file);
+      currentMediaType = "image";
+      videoPreview.removeAttribute("src"); videoPreview.load();
+      imagePreview.src = currentObjectUrl;
+      imagePreview.alt = file.name || "अपलोड की गई फोटो";
+      imagePreview.style.display = "block";
+      videoPreview.style.display = "none";
+      placeholder.style.display = "none";
+      applyObjectFit();
+      fileInfo.textContent = `${file.name} · ${formatBytes(file.size)} · फोटो`;
+      setStatus("फोटो सफलतापूर्वक लोड हो गई है।");
+      setPreviewState("फोटो 9:16 प्रीव्यू में दिखाई जा रही है।");
+      updateTickerVisibility();
+    }
+    function showVideo(file) {
+      if (mediaRecorder) stopCapture(true);
+      videoPreview.pause(); revokeObjectUrl();
+      currentObjectUrl = URL.createObjectURL(file);
+      currentMediaType = "video";
+      imagePreview.removeAttribute("src"); imagePreview.style.display = "none";
+      placeholder.style.display = "none";
+      videoPreview.src = currentObjectUrl;
+      videoPreview.style.display = "block";
+      videoPreview.controls = true;
+      videoPreview.playsInline = true; videoPreview.preload = "metadata";
+      videoPreview.autoplay = false; videoPreview.muted = false;
+      videoPreview.defaultMuted = false;
+      videoPreview.setAttribute("playsinline", "");
+      videoPreview.setAttribute("webkit-playsinline", "");
+      applyObjectFit();
+      fileInfo.textContent = `${file.name} · ${formatBytes(file.size)} · वीडियो`;
+      setStatus("वीडियो लोड हो रहा है…");
+      setPreviewState("वीडियो लोड हो रहा है।");
+      updateTickerVisibility();
+      videoPreview.load();
+    }
+    function handleMediaSelection(file) {
+      if (!file) { resetPreview(); return; }
+      const type = String(file.type).toLowerCase();
+      if (type.startsWith("image/")) showImage(file);
+      else if (type.startsWith("video/")) showVideo(file);
+      else {
+        resetPreview();
+        setStatus("यह फ़ाइल image या video नहीं है। दूसरी फ़ाइल चुनें।");
+        setPreviewState("अमान्य मीडिया प्रकार।");
+      }
+    }
+    videoPreview.addEventListener("loadedmetadata", () => {
+      if (currentMediaType !== "video") return;
+      let msg = "वीडियो तैयार है। Play बटन दबाएँ।";
+      if (Number.isFinite(videoPreview.duration)) {
+        msg += ` · अवधि ${Math.round(videoPreview.duration)} सेकंड`;
+      }
+      setStatus(msg);
+      setPreviewState("वीडियो 9:16 प्रीव्यू में तैयार है।");
+    });
+    videoPreview.addEventListener("loadeddata", () => {
+      if (currentMediaType === "video") {
+        setPreviewState("वीडियो का पहला फ्रेम तैयार है। Play दबाएँ।");
+      }
+    });
+    videoPreview.addEventListener("canplay", () => {
+      if (currentMediaType === "video") {
+        setStatus("वीडियो चलाने के लिए Play बटन दबाएँ।");
+      }
+    });
+    videoPreview.addEventListener("playing", () => {
+      if (currentMediaType === "video") {
+        setStatus("वीडियो चल रहा है।");
+        setPreviewState("वीडियो प्ले हो रहा है।");
+      }
+    });
+    videoPreview.addEventListener("pause", () => {
+      if (currentMediaType !== "video" || mediaRecorder) return;
+      if (!videoPreview.src || videoPreview.ended) return;
+      setStatus("वीडियो रुका हुआ है। Play बटन दबाएँ।");
+    });
+    videoPreview.addEventListener("ended", () => {
+      if (mediaRecorder) { stopCapture(false); }
+      if (currentMediaType === "video") {
+        setStatus("वीडियो पूरा हो गया है।");
+        setPreviewState("वीडियो प्लेबैक पूरा हो गया।");
+      }
+    });
+    videoPreview.addEventListener("error", () => {
+      if (currentMediaType !== "video") return;
+      const error = videoPreview.error;
+      let msg = "वीडियो चल नहीं पाया।";
+      if (error) {
+        if (error.code === 3) msg = "वीडियो decode नहीं हो पाया। इसका codec समर्थित न हो सकता है।";
+        else if (error.code === 4) msg = "वीडियो format या codec इस browser में समर्थित नहीं है।";
+      }
+      setStatus(msg);
+      setPreviewState("वीडियो playback में समस्या है।");
+    });
+
+    // कैप्चर सेटअप
+    function getRecordingType() {
+      if (typeof MediaRecorder === "undefined") return null;
+      const types = [
+        "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+        "video/mp4",
+        "video/webm;codecs=vp8,opus",
+        "video/webm"
+      ];
+      for (const type of types) {
+        if (typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(type)) {
+          return type;
+        }
+      }
+      return "";
+    }
+    function getFileExtension(mime) {
+      return mime.includes("mp4") ? "mp4" : "webm";
+    }
+    function drawMediaSource(ctx, source, width, height, fit) {
+      const sw = source.videoWidth || source.naturalWidth || 0;
+      const sh = source.videoHeight || source.naturalHeight || 0;
+      if (!sw || !sh) {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, width, height);
+        return;
+      }
+      const sourceRatio = sw/sh;
+      const targetRatio = width/height;
+      let dw, dh;
+      if (fit === "contain") {
+        if (sourceRatio > targetRatio) {
+          dw = width; dh = width/sourceRatio;
+        } else {
+          dh = height; dw = height*sourceRatio;
+        }
+      } else {
+        if (sourceRatio > targetRatio) {
+          dh = height; dw = height*sourceRatio;
+        } else {
+          dw = width; dh = width/sourceRatio;
+        }
+      }
+      const dx = (width - dw)/2, dy = (height - dh)/2;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(source, dx, dy, dw, dh);
+    }
+    function drawTickerOnCanvas(ctx, width, height, frameWidth, progress) {
+      if (!tickerEnabled || currentMediaType === null) return;
+      const scale = width / Math.max(frameWidth,1);
+      const tHeight = 42 * scale;
+      const labelW = 92 * scale;
+      const windowW = width - labelW;
+      if (windowW <= 0) return;
+      const bg = tickerBackgroundInput.value;
+      const txtColor = tickerTextColorInput.value;
+      const fontSize = Number(tickerFontSizeInput.value) * scale;
+      const weight = tickerBoldInput.checked ? 800 : 500;
+      const text = getTickerText();
+      ctx.save();
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, height - tHeight, width, tHeight);
+      ctx.fillStyle = "#dc2626";
+      ctx.fillRect(0, height - tHeight, labelW, tHeight);
+      ctx.fillStyle = "#fff";
+      ctx.font = `900 ${Math.max(10,12*scale)}px system-ui, sans-serif`;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("BREAKING", labelW/2, height - tHeight/2);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(labelW, height - tHeight, windowW, tHeight);
+      ctx.clip();
+      ctx.fillStyle = txtColor;
+      ctx.font = `${weight} ${Math.max(10,fontSize)}px "Noto Sans Devanagari", system-ui, sans-serif`;
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      const msgWidth = ctx.measureText(text).width;
+      const sepWidth = ctx.measureText("◆").width;
+      const padding = 90 * scale;
+      const sepMargin = 90 * scale;
+      const trackW = msgWidth + padding + sepWidth + sepMargin + msgWidth + padding;
+      const x = trackW * (1 - 2*progress);
+      const y = height - tHeight/2;
+      ctx.font = `${weight} ${Math.max(10,fontSize)}px "Noto Sans Devanagari", system-ui, sans-serif`;
+      ctx.fillStyle = txtColor;
+      ctx.fillText(text, labelW + x, y);
+      let cursor = labelW + x + msgWidth + padding;
+      ctx.font = `700 ${Math.max(10,fontSize/1.7)}px system-ui, sans-serif`;
+      ctx.fillStyle = "#facc15";
+      ctx.fillText("◆", cursor, y);
+      cursor += sepWidth + sepMargin;
+      ctx.font = `${weight} ${Math.max(10,fontSize)}px "Noto Sans Devanagari", system-ui, sans-serif`;
+      ctx.fillStyle = txtColor;
+      ctx.fillText(text, cursor, y);
+      ctx.restore();
+      ctx.restore();
+    }
+    function drawCaptureFrame(now) {
+      if (!captureContext) return;
+      const w = captureCanvas.width, h = captureCanvas.height;
+      captureContext.clearRect(0, 0, w, h);
+      if (currentMediaType === "image") {
+        drawMediaSource(captureContext, imagePreview, w, h, objectFitMode);
+      } else if (currentMediaType === "video") {
+        drawMediaSource(captureContext, videoPreview, w, h, objectFitMode);
+      } else {
+        captureContext.fillStyle = "#000";
+        captureContext.fillRect(0, 0, w, h);
+      }
+      if (!tickerPaused) {
+        const speed = Math.max(5, Number(tickerSpeedInput.value) || 14);
+        if (lastCaptureFrameTime) {
+          const delta = now - lastCaptureFrameTime;
+          captureTickerProgress = (captureTickerProgress + delta / (speed * 1000)) % 1;
+        }
+      }
+      lastCaptureFrameTime = now;
+      drawTickerOnCanvas(captureContext, w, h, previewFrame.clientWidth || 360, captureTickerProgress);
+      captureAnimationFrame = requestAnimationFrame(drawCaptureFrame);
+    }
+    async function prepareVideoAudio() {
+      if (currentMediaType !== "video") return [];
+      try {
+        if (typeof videoPreview.captureStream === "function") {
+          const stream = videoPreview.captureStream();
+          const tracks = stream.getAudioTracks();
+          if (tracks.length) return tracks;
+        }
+      } catch {}
+      try {
+        if (!videoAudioContext) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) return [];
+          videoAudioContext = new AudioCtx();
+          videoAudioSource = videoAudioContext.createMediaElementSource(videoPreview);
+          videoAudioDestination = videoAudioContext.createMediaStreamDestination();
+          videoAudioSource.connect(videoAudioDestination);
+          videoAudioSource.connect(videoAudioContext.destination);
+          videoAudioConnected = true;
+        }
+        if (videoAudioContext.state === "suspended") {
+          await videoAudioContext.resume();
+        }
+        return videoAudioDestination ? videoAudioDestination.stream.getAudioTracks() : [];
+      } catch {
+        return [];
+      }
+    }
+    function cleanupCaptureTracks() {
+      if (captureStream) {
+        captureStream.getTracks().forEach(track => { try { track.stop(); } catch{} });
+      }
+      captureStream = null;
+    }
+    function resetCaptureUi() {
+      captureButton.disabled = false;
+      captureButton.className = "btn primary";
+      captureButton.textContent = "🎥 रील कैप्चर करें";
+    }
+    async function startCapture() {
+      if (!currentMediaType) {
+        setStatus("पहले फोटो या वीडियो अपलोड करें।"); return;
+      }
+      if (typeof MediaRecorder === "undefined") {
+        setStatus("इस browser में MediaRecorder उपलब्ध नहीं है।"); return;
+      }
+      if (!HTMLCanvasElement.prototype.captureStream) {
+        setStatus("इस browser में canvas capture उपलब्ध नहीं है।"); return;
+      }
+      const mime = getRecordingType();
+      if (mime === null) {
+        setStatus("इस browser में video recording उपलब्ध नहीं है।"); return;
+      }
+      try {
+        if (lastCaptureUrl) {
+          URL.revokeObjectURL(lastCaptureUrl);
+          lastCaptureUrl = null;
+        }
+        captureDownload.classList.remove("visible");
+        captureCanvas = document.createElement("canvas");
+        captureCanvas.width = CAPTURE_WIDTH;
+        captureCanvas.height = CAPTURE_HEIGHT;
+        captureContext = captureCanvas.getContext("2d");
+        if (!captureContext) throw new Error("Canvas context उपलब्ध नहीं है।");
+        captureStream = captureCanvas.captureStream(CAPTURE_FPS);
+        const audioTracks = await prepareVideoAudio();
+        audioTracks.forEach(track => captureStream.addTrack(track));
+        const recorderOptions = { videoBitsPerSecond: 4000000 };
+        if (mime) recorderOptions.mimeType = mime;
+        if (audioTracks.length) recorderOptions.audioBitsPerSecond = 128000;
+        mediaRecorder = new MediaRecorder(captureStream, recorderOptions);
+        const usedMime = mediaRecorder.mimeType || mime || "video/webm";
+        recordedChunks = [];
+        mediaRecorder.addEventListener("dataavailable", e => {
+          if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+        });
+        mediaRecorder.addEventListener("stop", finishCapture);
+        mediaRecorder.addEventListener("error", () => {
+          setStatus("कैप्चर के दौरान recording error आया।");
+          cleanupCaptureTracks();
+          resetCaptureUi();
+          mediaRecorder = null;
+        });
+        captureTickerProgress = 0;
+        lastCaptureFrameTime = 0;
+        drawCaptureFrame(performance.now());
+        mediaRecorder.start(250);
+        captureButton.className = "btn danger";
+        captureButton.textContent = "⏹ कैप्चर रोकें";
+        setStatus(currentMediaType === "video" ?
+          "रील और टिकर रिकॉर्ड हो रहे हैं…" :
+          "फोटो और टिकर की 10 सेकंड रील रिकॉर्ड हो रही है…");
+        setPreviewState("कैप्चर चल रहा है।");
+        if (currentMediaType === "video") {
+          if (Number.isFinite(videoPreview.duration)) videoPreview.currentTime = 0;
+          try { await videoPreview.play(); }
+          catch (err) {
+            stopCapture(true);
+            setStatus("वीडियो playback शुरू नहीं हो सका। Play की अनुमति दें और फिर capture करें।");
+            return;
+          }
+        } else {
+          captureTimer = window.setTimeout(() => { if (mediaRecorder) stopCapture(false); }, IMAGE_CAPTURE_DURATION);
+        }
+      } catch (err) {
+        cleanupCaptureTracks();
+        mediaRecorder = null;
+        resetCaptureUi();
+        setStatus("कैप्चर शुरू नहीं हो सका।");
+        setPreviewState("कैप्चर में समस्या आई।");
+      }
+    }
+    function stopCapture(cancelled = false) {
+      if (captureTimer) { clearTimeout(captureTimer); captureTimer = null; }
+      if (captureAnimationFrame) { cancelAnimationFrame(captureAnimationFrame); captureAnimationFrame = 0; }
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+      } else {
+        cleanupCaptureTracks();
+        mediaRecorder = null;
+        resetCaptureUi();
+      }
+      if (cancelled) { recordedChunks = []; }
+    }
+    function finishCapture() {
+      const mime = recordingMimeType || "video/webm";
+      const blob = new Blob(recordedChunks, { type: mime });
+      cleanupCaptureTracks();
+      if (captureAnimationFrame) { cancelAnimationFrame(captureAnimationFrame); captureAnimationFrame = 0; }
+      captureCanvas = null; captureContext = null; recordedChunks = [];
+      mediaRecorder = null;
+      if (blob.size <= 0) {
+        resetCaptureUi();
+        setStatus("कैप्चर फ़ाइल खाली बनी। फिर प्रयास करें।");
+        return;
+      }
+      lastCaptureUrl = URL.createObjectURL(blob);
+      const ext = getFileExtension(mime);
+      captureDownload.href = lastCaptureUrl;
+      captureDownload.download = `swar-srijan-reel.${ext}`;
+      captureDownload.classList.add("visible");
+      resetCaptureUi();
+      setStatus(`कैप्चर पूरा हो गया। ${ext.toUpperCase()} फ़ाइल तैयार है।`);
+      setPreviewState("रील और न्यूज़ टिकर कैप्चर हो चुके हैं।");
+    }
+
+    // पूर्णस्क्रीन
+    async function toggleFullscreen() {
+      try {
+        if (!document.fullscreenElement) await previewFrame.requestFullscreen();
+        else await document.exitFullscreen();
+      } catch {
+        setStatus("फुल स्क्रीन इस ब्राउज़र में उपलब्ध नहीं है।");
+      }
+    }
+
+    // इवेंट लिस्नर्स
+    mediaInput.addEventListener("change", () => {
+      const [file] = mediaInput.files || [];
+      handleMediaSelection(file);
+    });
+    fitButton.addEventListener("click", () => { objectFitMode = "cover"; applyObjectFit(); setStatus("फ्रेम भरें मोड सक्रिय है।"); });
+    containButton.addEventListener("click", () => { objectFitMode = "contain"; applyObjectFit(); setStatus("पूरा दिखाएँ मोड सक्रिय है।"); });
+    fullscreenButton.addEventListener("click", toggleFullscreen);
+    removeButton.addEventListener("click", resetPreview);
+    captureButton.addEventListener("click", async () => {
+      if (mediaRecorder) stopCapture(false);
+      else await startCapture();
+    });
+    tickerTextInput.addEventListener("input", updateTickerText);
+    tickerSpeedInput.addEventListener("input", updateTickerSpeed);
+    tickerFontSizeInput.addEventListener("input", updateTickerFontSize);
+    tickerBackgroundInput.addEventListener("input", updateTickerBackground);
+    tickerTextColorInput.addEventListener("input", updateTickerTextColor);
+    tickerBoldInput.addEventListener("change", updateTickerBold);
+    tickerToggleButton.addEventListener("click", () => { tickerEnabled = !tickerEnabled; updateTickerVisibility(); });
+    tickerPauseButton.addEventListener("click", () => { tickerPaused = !tickerPaused; updateTickerVisibility(); });
+    document.addEventListener("fullscreenchange", () => {
+      fullscreenButton.textContent = document.fullscreenElement ? "⛶ फुल स्क्रीन बंद करें" : "⛶ फुल स्क्रीन";
+    });
+
+    // Initialization
+    updateTickerText();
+    updateTickerSpeed();
+    updateTickerFontSize();
+    updateTickerBackground();
+    updateTickerTextColor();
+    updateTickerBold();
+    applyObjectFit();
+    resetPreview();
+  </script>
+</body>
+</html>
