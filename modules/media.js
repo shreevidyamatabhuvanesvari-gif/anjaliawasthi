@@ -43,6 +43,7 @@ const SUPPORTED_EXTENSIONS = Object.freeze({
     "bmp",
     "avif",
   ]),
+
   video: new Set([
     "mp4",
     "webm",
@@ -62,6 +63,7 @@ const SUPPORTED_MIME_TYPES = Object.freeze({
     "image/bmp",
     "image/avif",
   ]),
+
   video: new Set([
     "video/mp4",
     "video/webm",
@@ -78,7 +80,8 @@ const DEFAULT_MESSAGES = Object.freeze({
   emptyFile: "चयनित फ़ाइल खाली है। कृपया दूसरी फ़ाइल चुनें।",
   tooLarge: "चयनित फ़ाइल निर्धारित आकार सीमा से बड़ी है।",
   previewError: "इस फ़ाइल का प्रीव्यू तैयार नहीं किया जा सका।",
-  browserError: "इस ब्राउज़र में मीडिया प्रीव्यू के लिए आवश्यक सुविधा उपलब्ध नहीं है।",
+  browserError:
+    "इस ब्राउज़र में मीडिया प्रीव्यू के लिए आवश्यक सुविधा उपलब्ध नहीं है।",
   moduleError: "मीडिया मॉड्यूल प्रारंभ नहीं हो सका।",
 });
 
@@ -140,7 +143,8 @@ export function createMediaModule(options = {}) {
   /**
    * Initialize the module.
    *
-   * Safe to call more than once. Duplicate listeners are never attached.
+   * Safe to call more than once.
+   * Duplicate listeners are never attached.
    */
   function init() {
     if (destroyed) {
@@ -158,13 +162,18 @@ export function createMediaModule(options = {}) {
         "browser_unavailable",
         DEFAULT_MESSAGES.browserError
       );
+
       state = {
         ...state,
         status: "error",
         error,
       };
+
       emitError(error);
-      return createResult(false, "browser-unavailable", { error });
+
+      return createResult(false, "browser-unavailable", {
+        error,
+      });
     }
 
     elements = resolveElements(config.root, config.selectors);
@@ -177,7 +186,9 @@ export function createMediaModule(options = {}) {
         `${DEFAULT_MESSAGES.moduleError} Missing: ${missingRequiredElements.join(
           ", "
         )}.`,
-        { missing: missingRequiredElements }
+        {
+          missing: missingRequiredElements,
+        }
       );
 
       state = {
@@ -188,7 +199,9 @@ export function createMediaModule(options = {}) {
 
       emitError(error);
 
-      return createResult(false, "missing-dom-elements", { error });
+      return createResult(false, "missing-dom-elements", {
+        error,
+      });
     }
 
     bindEvents();
@@ -223,7 +236,7 @@ export function createMediaModule(options = {}) {
   }
 
   /**
-   * Returns the currently visible media DOM element.
+   * Returns the currently selected media DOM element.
    */
   function getMediaElement() {
     if (!state.hasMedia) {
@@ -239,7 +252,7 @@ export function createMediaModule(options = {}) {
    * Returns the current media source information.
    *
    * The File object is included for application-internal consumption.
-   * getState() should be used when only serializable state is required.
+   * Use getState() when only serializable state is required.
    */
   function getMediaSource() {
     if (!state.hasMedia || !state.file || !objectUrl) {
@@ -320,9 +333,11 @@ export function createMediaModule(options = {}) {
 
     resetFileInput();
     resetPreviewElements();
-    resetUi();
 
     state = createInitialState(config);
+
+    applyFitModeToPreview(state.fitMode);
+    resetUi();
 
     if (emit) {
       emitChange("cleared");
@@ -342,7 +357,6 @@ export function createMediaModule(options = {}) {
 
     unbindEvents();
     revokeObjectUrl();
-
     resetPreviewElements();
 
     elements = createEmptyElementMap();
@@ -377,7 +391,9 @@ export function createMediaModule(options = {}) {
   }
 
   function handleSelectedFile(file) {
-    clear({ emit: false });
+    clear({
+      emit: false,
+    });
 
     const validation = validateFile(file);
 
@@ -403,7 +419,7 @@ export function createMediaModule(options = {}) {
 
     objectUrl = nextObjectUrl;
 
-    const nextState = {
+    state = {
       ...createInitialState(config),
       status: "loading",
       hasMedia: true,
@@ -417,8 +433,6 @@ export function createMediaModule(options = {}) {
       fitMode: state.fitMode || resolveInitialFitMode(),
       error: null,
     };
-
-    state = nextState;
 
     updateUiForMediaLoading();
 
@@ -434,7 +448,10 @@ export function createMediaModule(options = {}) {
 
     if (!(image instanceof HTMLImageElement)) {
       handlePreviewFailure(
-        createError("missing_image_preview", DEFAULT_MESSAGES.previewError)
+        createError(
+          "missing_image_preview",
+          DEFAULT_MESSAGES.previewError
+        )
       );
       return;
     }
@@ -469,12 +486,20 @@ export function createMediaModule(options = {}) {
       }
 
       handlePreviewFailure(
-        createError("image_preview_error", DEFAULT_MESSAGES.previewError)
+        createError(
+          "image_preview_error",
+          DEFAULT_MESSAGES.previewError
+        )
       );
     };
 
-    image.addEventListener("load", eventHandlers.imageLoad, { once: true });
-    image.addEventListener("error", eventHandlers.imageError, { once: true });
+    image.addEventListener("load", eventHandlers.imageLoad, {
+      once: true,
+    });
+
+    image.addEventListener("error", eventHandlers.imageError, {
+      once: true,
+    });
 
     image.src = url;
 
@@ -490,7 +515,10 @@ export function createMediaModule(options = {}) {
 
     if (!(video instanceof HTMLVideoElement)) {
       handlePreviewFailure(
-        createError("missing_video_preview", DEFAULT_MESSAGES.previewError)
+        createError(
+          "missing_video_preview",
+          DEFAULT_MESSAGES.previewError
+        )
       );
       return;
     }
@@ -500,7 +528,11 @@ export function createMediaModule(options = {}) {
         "loadedmetadata",
         eventHandlers.videoLoadedMetadata
       );
-      video.removeEventListener("error", eventHandlers.videoError);
+
+      video.removeEventListener(
+        "error",
+        eventHandlers.videoError
+      );
     };
 
     eventHandlers.videoLoadedMetadata = () => {
@@ -508,6 +540,20 @@ export function createMediaModule(options = {}) {
 
       if (destroyed || objectUrl !== url) {
         return;
+      }
+
+      /*
+       * Keep the uploaded video's original audio available.
+       * Playback still requires a user gesture through the Play button
+       * or the video's native controls.
+       */
+      video.muted = false;
+      video.defaultMuted = false;
+
+      try {
+        video.volume = 1;
+      } catch {
+        // Safe no-op.
       }
 
       state = {
@@ -528,18 +574,50 @@ export function createMediaModule(options = {}) {
       }
 
       handlePreviewFailure(
-        createError("video_preview_error", DEFAULT_MESSAGES.previewError)
+        createError(
+          "video_preview_error",
+          DEFAULT_MESSAGES.previewError
+        )
       );
     };
+
+    /*
+     * Stop any previous playback before replacing the source.
+     */
+    try {
+      video.pause();
+    } catch {
+      // Safe no-op.
+    }
+
+    /*
+     * IMPORTANT:
+     * Do not mute the uploaded video.
+     */
+    video.muted = false;
+    video.defaultMuted = false;
+
+    try {
+      video.volume = 1;
+    } catch {
+      // Safe no-op.
+    }
 
     video.addEventListener(
       "loadedmetadata",
       eventHandlers.videoLoadedMetadata,
-      { once: true }
+      {
+        once: true,
+      }
     );
-    video.addEventListener("error", eventHandlers.videoError, {
-      once: true,
-    });
+
+    video.addEventListener(
+      "error",
+      eventHandlers.videoError,
+      {
+        once: true,
+      }
+    );
 
     video.src = url;
     video.load();
@@ -550,10 +628,8 @@ export function createMediaModule(options = {}) {
   function handlePreviewFailure(error) {
     revokeObjectUrl();
 
-    const failedState = createInitialState(config);
-
     state = {
-      ...failedState,
+      ...createInitialState(config),
       status: "error",
       error,
     };
@@ -570,14 +646,20 @@ export function createMediaModule(options = {}) {
     if (!(file instanceof File)) {
       return {
         valid: false,
-        error: createError("invalid_file", DEFAULT_MESSAGES.invalidType),
+        error: createError(
+          "invalid_file",
+          DEFAULT_MESSAGES.invalidType
+        ),
       };
     }
 
     if (file.size <= 0) {
       return {
         valid: false,
-        error: createError("empty_file", DEFAULT_MESSAGES.emptyFile),
+        error: createError(
+          "empty_file",
+          DEFAULT_MESSAGES.emptyFile
+        ),
       };
     }
 
@@ -587,10 +669,14 @@ export function createMediaModule(options = {}) {
     ) {
       return {
         valid: false,
-        error: createError("file_too_large", DEFAULT_MESSAGES.tooLarge, {
-          maxFileSizeBytes: config.maxFileSizeBytes,
-          actualFileSizeBytes: file.size,
-        }),
+        error: createError(
+          "file_too_large",
+          DEFAULT_MESSAGES.tooLarge,
+          {
+            maxFileSizeBytes: config.maxFileSizeBytes,
+            actualFileSizeBytes: file.size,
+          }
+        ),
       };
     }
 
@@ -599,10 +685,14 @@ export function createMediaModule(options = {}) {
     if (!kind || !config.acceptedKinds.includes(kind)) {
       return {
         valid: false,
-        error: createError("unsupported_type", DEFAULT_MESSAGES.invalidType, {
-          fileType: file.type || null,
-          extension: getFileExtension(file.name),
-        }),
+        error: createError(
+          "unsupported_type",
+          DEFAULT_MESSAGES.invalidType,
+          {
+            fileType: file.type || null,
+            extension: getFileExtension(file.name),
+          }
+        ),
       };
     }
 
@@ -621,7 +711,9 @@ export function createMediaModule(options = {}) {
         continue;
       }
 
-      const mimeSupported = SUPPORTED_MIME_TYPES[kind].has(mimeType);
+      const mimeSupported =
+        SUPPORTED_MIME_TYPES[kind].has(mimeType);
+
       const extensionSupported =
         extension.length > 0 &&
         SUPPORTED_EXTENSIONS[kind].has(extension);
@@ -640,6 +732,7 @@ export function createMediaModule(options = {}) {
       !eventHandlers.fileInputChange
     ) {
       eventHandlers.fileInputChange = handleFileInputChange;
+
       elements.fileInput.addEventListener(
         "change",
         eventHandlers.fileInputChange
@@ -726,6 +819,38 @@ export function createMediaModule(options = {}) {
       );
     }
 
+    if (elements.imagePreview instanceof HTMLImageElement) {
+      if (eventHandlers.imageLoad) {
+        elements.imagePreview.removeEventListener(
+          "load",
+          eventHandlers.imageLoad
+        );
+      }
+
+      if (eventHandlers.imageError) {
+        elements.imagePreview.removeEventListener(
+          "error",
+          eventHandlers.imageError
+        );
+      }
+    }
+
+    if (elements.videoPreview instanceof HTMLVideoElement) {
+      if (eventHandlers.videoLoadedMetadata) {
+        elements.videoPreview.removeEventListener(
+          "loadedmetadata",
+          eventHandlers.videoLoadedMetadata
+        );
+      }
+
+      if (eventHandlers.videoError) {
+        elements.videoPreview.removeEventListener(
+          "error",
+          eventHandlers.videoError
+        );
+      }
+    }
+
     eventHandlers.fileInputChange = null;
     eventHandlers.fitModeChange = null;
     eventHandlers.removeClick = null;
@@ -751,7 +876,21 @@ export function createMediaModule(options = {}) {
       video.controls = true;
       video.preload = "metadata";
       video.playsInline = true;
-      video.muted = true;
+
+      /*
+       * IMPORTANT:
+       * The uploaded video must not be muted.
+       */
+      video.muted = false;
+      video.defaultMuted = false;
+
+      try {
+        video.volume = 1;
+      } catch {
+        // Safe no-op.
+      }
+
+      video.autoplay = false;
       video.hidden = true;
       video.removeAttribute("src");
       video.style.objectFit = state.fitMode;
@@ -766,8 +905,8 @@ export function createMediaModule(options = {}) {
     }
 
     /*
-     * Do not overwrite an application-specific accept attribute unless it
-     * is absent. This keeps index.html authoritative.
+     * Do not overwrite an application-specific accept attribute unless
+     * it is absent. This keeps index.html authoritative.
      */
     if (!input.hasAttribute("accept")) {
       input.setAttribute(
@@ -775,8 +914,14 @@ export function createMediaModule(options = {}) {
         [
           ...Array.from(SUPPORTED_MIME_TYPES.image),
           ...Array.from(SUPPORTED_MIME_TYPES.video),
-          ...Array.from(SUPPORTED_EXTENSIONS.image, (ext) => `.${ext}`),
-          ...Array.from(SUPPORTED_EXTENSIONS.video, (ext) => `.${ext}`),
+          ...Array.from(
+            SUPPORTED_EXTENSIONS.image,
+            (ext) => `.${ext}`
+          ),
+          ...Array.from(
+            SUPPORTED_EXTENSIONS.video,
+            (ext) => `.${ext}`
+          ),
         ].join(",")
       );
     }
@@ -817,7 +962,10 @@ export function createMediaModule(options = {}) {
       return configured;
     }
 
-    if (configured && !(elements.fitMode instanceof HTMLSelectElement)) {
+    if (
+      configured &&
+      !(elements.fitMode instanceof HTMLSelectElement)
+    ) {
       return configured;
     }
 
@@ -883,6 +1031,9 @@ export function createMediaModule(options = {}) {
       removeButton.disabled = true;
     }
 
+    /*
+     * Keep #media-preview visible so its empty-state message can be shown.
+     */
     setPreviewContainerVisibility(false);
     applyFitModeToPreview(state.fitMode);
   }
@@ -909,7 +1060,8 @@ export function createMediaModule(options = {}) {
     }
 
     if (uploadHelp instanceof HTMLElement) {
-      uploadHelp.textContent = "मीडिया प्रीव्यू तैयार किया जा रहा है…";
+      uploadHelp.textContent =
+        "मीडिया प्रीव्यू तैयार किया जा रहा है…";
     }
 
     if (emptyState instanceof HTMLElement) {
@@ -922,7 +1074,6 @@ export function createMediaModule(options = {}) {
 
     setPreviewContainerVisibility(true);
     setVisiblePreview(state.kind);
-
     applyFitModeToPreview(state.fitMode);
   }
 
@@ -930,7 +1081,8 @@ export function createMediaModule(options = {}) {
     const uploadHelp = elements.uploadHelp;
 
     if (uploadHelp instanceof HTMLElement) {
-      uploadHelp.textContent = "मीडिया तैयार है। आप इसे बदल या हटा सकते हैं।";
+      uploadHelp.textContent =
+        "मीडिया तैयार है। आप इसे बदल या हटा सकते हैं।";
     }
 
     setPreviewContainerVisibility(true);
@@ -960,7 +1112,8 @@ export function createMediaModule(options = {}) {
     }
 
     if (uploadHelp instanceof HTMLElement) {
-      uploadHelp.textContent = "कृपया समर्थित फोटो या वीडियो फ़ाइल चुनें।";
+      uploadHelp.textContent =
+        "कृपया समर्थित फोटो या वीडियो फ़ाइल चुनें।";
     }
 
     if (emptyState instanceof HTMLElement) {
@@ -972,10 +1125,12 @@ export function createMediaModule(options = {}) {
     }
 
     setPreviewContainerVisibility(false);
+    setVisiblePreview(null);
   }
 
   function buildFileInfoText() {
     const typeLabel = state.fileType || state.kind || "unknown";
+
     return `${typeLabel} • ${state.fileSizeLabel}`;
   }
 
@@ -1000,10 +1155,13 @@ export function createMediaModule(options = {}) {
     }
 
     /*
-     * The surrounding #media-preview is a container in index.html.
-     * Do not destroy or replace its child nodes; simply control visibility.
+     * IMPORTANT:
+     * #media-preview contains #media-empty-state in index.html.
+     * Hiding the whole container also hides the empty-state message.
+     * Therefore the container remains visible.
      */
-    container.hidden = !hasMedia;
+    container.hidden = false;
+    container.dataset.hasMedia = hasMedia ? "true" : "false";
   }
 
   function resetPreviewElements() {
@@ -1019,7 +1177,16 @@ export function createMediaModule(options = {}) {
       try {
         video.pause();
       } catch {
-        // Safe no-op: pause may fail in unusual browser media states.
+        // Safe no-op.
+      }
+
+      video.muted = false;
+      video.defaultMuted = false;
+
+      try {
+        video.volume = 1;
+      } catch {
+        // Safe no-op.
       }
 
       video.removeAttribute("src");
@@ -1028,6 +1195,10 @@ export function createMediaModule(options = {}) {
     }
 
     setPreviewContainerVisibility(false);
+
+    if (elements.emptyState instanceof HTMLElement) {
+      elements.emptyState.hidden = false;
+    }
   }
 
   function resetFileInput() {
@@ -1035,8 +1206,7 @@ export function createMediaModule(options = {}) {
 
     if (input instanceof HTMLInputElement) {
       /*
-       * Setting value to an empty string is the standard way to reset a
-       * file input and allows the same file to be selected again.
+       * Resetting the file input allows the same file to be selected again.
        */
       input.value = "";
       input.setAttribute("aria-invalid", "false");
@@ -1073,7 +1243,9 @@ export function createMediaModule(options = {}) {
 
     safelyInvokeCallback(config.onError, {
       type: "media-error",
-      error: { ...error },
+      error: {
+        ...error,
+      },
       state: getState(),
       module: api,
     });
@@ -1123,32 +1295,47 @@ function normalizeOptions(options) {
       options?.fileInput,
       SELECTORS.fileInput
     ),
+
     uploadHelp: normalizeSelector(
       options?.uploadHelp,
       SELECTORS.uploadHelp
     ),
-    fileName: normalizeSelector(options?.fileName, SELECTORS.fileName),
-    fileInfo: normalizeSelector(options?.fileInfo, SELECTORS.fileInfo),
+
+    fileName: normalizeSelector(
+      options?.fileName,
+      SELECTORS.fileName
+    ),
+
+    fileInfo: normalizeSelector(
+      options?.fileInfo,
+      SELECTORS.fileInfo
+    ),
+
     previewContainer: normalizeSelector(
       options?.previewContainer,
       SELECTORS.previewContainer
     ),
+
     imagePreview: normalizeSelector(
       options?.imagePreview,
       SELECTORS.imagePreview
     ),
+
     videoPreview: normalizeSelector(
       options?.videoPreview,
       SELECTORS.videoPreview
     ),
+
     emptyState: normalizeSelector(
       options?.emptyState,
       SELECTORS.emptyState
     ),
+
     fitMode: normalizeSelector(
       options?.fitMode,
       SELECTORS.fitMode
     ),
+
     removeButton: normalizeSelector(
       options?.removeButton,
       SELECTORS.removeButton
@@ -1158,7 +1345,9 @@ function normalizeOptions(options) {
   const requestedKinds = Array.isArray(options?.acceptedKinds)
     ? options.acceptedKinds
         .map((kind) => normalizeString(kind).toLowerCase())
-        .filter((kind) => kind === "image" || kind === "video")
+        .filter(
+          (kind) => kind === "image" || kind === "video"
+        )
     : DEFAULT_OPTIONS.acceptedKinds;
 
   const acceptedKinds = [
@@ -1180,17 +1369,21 @@ function normalizeOptions(options) {
     selectors,
     acceptedKinds,
     maxFileSizeBytes,
+
     initialFitMode:
       normalizeString(options?.initialFitMode) ||
       DEFAULT_OPTIONS.initialFitMode,
+
     onChange:
       typeof options?.onChange === "function"
         ? options.onChange
         : DEFAULT_OPTIONS.onChange,
+
     onError:
       typeof options?.onError === "function"
         ? options.onError
         : DEFAULT_OPTIONS.onError,
+
     onFitModeChange:
       typeof options?.onFitModeChange === "function"
         ? options.onFitModeChange
@@ -1204,7 +1397,9 @@ function resolveElements(root, selectors) {
     uploadHelp: root.querySelector(selectors.uploadHelp),
     fileName: root.querySelector(selectors.fileName),
     fileInfo: root.querySelector(selectors.fileInfo),
-    previewContainer: root.querySelector(selectors.previewContainer),
+    previewContainer: root.querySelector(
+      selectors.previewContainer
+    ),
     imagePreview: root.querySelector(selectors.imagePreview),
     videoPreview: root.querySelector(selectors.videoPreview),
     emptyState: root.querySelector(selectors.emptyState),
@@ -1315,12 +1510,16 @@ function formatFileSize(bytes) {
   let value = bytes;
   let unitIndex = -1;
 
-  while (value >= 1024 && unitIndex < units.length - 1) {
+  while (
+    value >= 1024 &&
+    unitIndex < units.length - 1
+  ) {
     value /= 1024;
     unitIndex += 1;
   }
 
-  const precision = value >= 100 ? 0 : value >= 10 ? 1 : 2;
+  const precision =
+    value >= 100 ? 0 : value >= 10 ? 1 : 2;
 
   return `${value.toFixed(precision)} ${units[unitIndex]}`;
 }
@@ -1329,7 +1528,10 @@ function getFileExtension(fileName) {
   const normalized = normalizeString(fileName).toLowerCase();
   const lastDot = normalized.lastIndexOf(".");
 
-  if (lastDot <= 0 || lastDot === normalized.length - 1) {
+  if (
+    lastDot <= 0 ||
+    lastDot === normalized.length - 1
+  ) {
     return "";
   }
 
@@ -1339,7 +1541,7 @@ function getFileExtension(fileName) {
 function sanitizeDisplayName(fileName) {
   /*
    * Keep the actual file name intact as text.
-   * This helper only removes control characters that are not useful in UI.
+   * This helper removes control characters that are not useful in UI.
    * It does not create or inject HTML.
    */
   return normalizeString(fileName)
@@ -1372,10 +1574,15 @@ function safelyInvokeCallback(callback, payload) {
   } catch (error) {
     /*
      * Consumer callback failures must not break the media module itself.
-     * Logging is intentionally limited to development diagnostics.
      */
-    if (typeof console !== "undefined" && typeof console.error === "function") {
-      console.error("Swar Srijan Studio media callback error:", error);
+    if (
+      typeof console !== "undefined" &&
+      typeof console.error === "function"
+    ) {
+      console.error(
+        "Swar Srijan Studio media callback error:",
+        error
+      );
     }
   }
 }
