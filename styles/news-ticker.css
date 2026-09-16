@@ -1,0 +1,419 @@
+/* ==========================================================================
+   News Ticker
+   Production-grade, responsive, theme-aware, accessible marquee
+   ========================================================================== */
+
+.news-ticker {
+  --ticker-height: 2.75rem;
+  --ticker-label-width: auto;
+  --ticker-label-gap: 0.75rem;
+  --ticker-content-gap: 2.5rem;
+
+  --ticker-duration: 20s;
+  --ticker-distance: 100%;
+
+  --ticker-bg: #111827;
+  --ticker-border: rgba(255, 255, 255, 0.08);
+  --ticker-label-bg: #dc2626;
+  --ticker-label-color: #ffffff;
+  --ticker-dot: currentColor;
+
+  --ticker-text: #f9fafb;
+  --ticker-muted: #9ca3af;
+  --ticker-link: #ffffff;
+  --ticker-link-hover: #ffffff;
+  --ticker-focus-ring: rgba(255, 255, 255, 0.9);
+
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  width: 100%;
+  height: var(--ticker-height);
+  overflow: hidden;
+  isolation: isolate;
+
+  background: var(--ticker-bg);
+  border-block: 1px solid var(--ticker-border);
+
+  color: var(--ticker-text);
+  font-family: inherit;
+  line-height: 1;
+}
+
+.news-ticker__label {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 var(--ticker-label-width);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  min-width: max-content;
+  padding-inline: 0.875rem;
+
+  background: var(--ticker-label-bg);
+  color: var(--ticker-label-color);
+
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+
+  white-space: nowrap;
+  user-select: none;
+}
+
+.news-ticker__label-dot {
+  flex: 0 0 auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--ticker-dot);
+
+  box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.12);
+}
+
+.news-ticker__viewport {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+
+  /*
+   * Keeps the moving content from visually touching the label.
+   */
+  padding-inline: var(--ticker-label-gap);
+
+  /*
+   * Masking prevents the track from appearing outside the viewport.
+   * The solid side fade is deliberately subtle so the text remains readable.
+   */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 0.75rem,
+    #000 calc(100% - 0.75rem),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 0.75rem,
+    #000 calc(100% - 0.75rem),
+    transparent 100%
+  );
+}
+
+.news-ticker__track {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  width: max-content;
+  min-width: max-content;
+  height: 100%;
+
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+
+  animation-name: news-ticker-marquee;
+  animation-duration: var(--ticker-duration);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+
+  backface-visibility: hidden;
+  contain: layout paint;
+}
+
+.news-ticker__group {
+  flex: 0 0 auto;
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ticker-content-gap);
+
+  width: max-content;
+  min-width: max-content;
+  height: 100%;
+
+  /*
+   * The JS module duplicates the same single headline into a second group.
+   * This makes the transition between groups visually seamless.
+   */
+}
+
+.news-ticker__item {
+  flex: 0 0 auto;
+
+  display: inline-flex;
+  align-items: center;
+  min-width: max-content;
+
+  color: var(--ticker-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+
+  white-space: nowrap;
+}
+
+.news-ticker__separator {
+  flex: 0 0 auto;
+
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+
+  background: var(--ticker-muted);
+  opacity: 0.75;
+}
+
+.news-ticker__text {
+  display: inline-block;
+  min-width: max-content;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.news-ticker__link {
+  display: inline-block;
+  min-width: max-content;
+
+  color: var(--ticker-link);
+  text-decoration: none;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+
+  transition:
+    color 160ms ease,
+    text-decoration-color 160ms ease;
+}
+
+.news-ticker__link:hover {
+  color: var(--ticker-link-hover);
+  text-decoration: underline;
+}
+
+.news-ticker__link:focus-visible {
+  outline: 2px solid var(--ticker-focus-ring);
+  outline-offset: 3px;
+  border-radius: 0.125rem;
+}
+
+.news-ticker__empty {
+  flex: 1 1 auto;
+
+  display: flex;
+  align-items: center;
+
+  min-width: 0;
+  padding-inline: 0.25rem;
+
+  color: var(--ticker-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.news-ticker__status {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+
+  border: 0;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Animation
+   ========================================================================== */
+
+@keyframes news-ticker-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(calc(-1 * var(--ticker-distance)), 0, 0);
+  }
+}
+
+/* ==========================================================================
+   Light Theme
+   ========================================================================== */
+
+@media (prefers-color-scheme: light) {
+  .news-ticker {
+    --ticker-bg: #ffffff;
+    --ticker-border: rgba(17, 24, 39, 0.1);
+
+    --ticker-text: #111827;
+    --ticker-muted: #6b7280;
+    --ticker-link: #111827;
+    --ticker-link-hover: #111827;
+    --ticker-focus-ring: #111827;
+  }
+}
+
+/*
+ * Supports applications that explicitly expose a light theme on a parent.
+ */
+[data-theme="light"] .news-ticker {
+  --ticker-bg: #ffffff;
+  --ticker-border: rgba(17, 24, 39, 0.1);
+
+  --ticker-text: #111827;
+  --ticker-muted: #6b7280;
+  --ticker-link: #111827;
+  --ticker-link-hover: #111827;
+  --ticker-focus-ring: #111827;
+}
+
+[data-theme="dark"] .news-ticker {
+  --ticker-bg: #111827;
+  --ticker-border: rgba(255, 255, 255, 0.08);
+
+  --ticker-text: #f9fafb;
+  --ticker-muted: #9ca3af;
+  --ticker-link: #ffffff;
+  --ticker-link-hover: #ffffff;
+  --ticker-focus-ring: rgba(255, 255, 255, 0.9);
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .news-ticker {
+    --ticker-height: 2.5rem;
+    --ticker-label-gap: 0.625rem;
+    --ticker-content-gap: 1.75rem;
+  }
+
+  .news-ticker__label {
+    padding-inline: 0.75rem;
+
+    font-size: 0.625rem;
+    letter-spacing: 0.07em;
+  }
+
+  .news-ticker__label-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+  }
+
+  .news-ticker__viewport {
+    padding-inline: 0.5rem;
+
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 0.5rem,
+      #000 calc(100% - 0.5rem),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 0.5rem,
+      #000 calc(100% - 0.5rem),
+      transparent 100%
+    );
+  }
+
+  .news-ticker__item {
+    font-size: 0.8125rem;
+  }
+
+  .news-ticker__empty {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .news-ticker {
+    --ticker-content-gap: 1.25rem;
+  }
+
+  .news-ticker__label {
+    padding-inline: 0.625rem;
+  }
+
+  .news-ticker__item {
+    font-size: 0.75rem;
+  }
+}
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .news-ticker__track {
+    animation: none;
+    transform: translate3d(0, 0, 0);
+    will-change: auto;
+  }
+
+  .news-ticker__link {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   High Contrast / Forced Colors
+   ========================================================================== */
+
+@media (forced-colors: active) {
+  .news-ticker {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .news-ticker__label {
+    background: Highlight;
+    color: HighlightText;
+  }
+
+  .news-ticker__label-dot,
+  .news-ticker__separator {
+    background: CanvasText;
+    box-shadow: none;
+  }
+
+  .news-ticker__item,
+  .news-ticker__link,
+  .news-ticker__empty {
+    color: CanvasText;
+  }
+
+  .news-ticker__viewport {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .news-ticker__link:focus-visible {
+    outline: 2px solid Highlight;
+  }
+}
