@@ -8,18 +8,19 @@
  * - Bootstraps the application.
  * - Integrates the existing media module.
  * - Integrates the existing news ticker module.
+ * - Integrates the canvas renderer module.
  * - Maintains centralized application state.
  * - Detects browser capabilities.
  * - Manages app-level status, loading, error and success UI.
  * - Handles form submission without backend/API calls.
  * - Registers the service worker when supported.
- * - Keeps integration points ready for future modules.
  *
  * No external dependencies.
  */
 
 import { createMediaModule } from "./modules/media.js";
 import { createNewsTickerModule } from "./modules/news-ticker.js";
+import { createCanvasRendererModule } from "./modules/canvas-renderer.js";
 
 const APP = Object.freeze({
   NAME: "Swar Srijan Studio",
@@ -42,6 +43,7 @@ const SELECTORS = Object.freeze({
 
   tickerRoot: "#news-ticker",
 
+  previewCanvas: "#preview-canvas",
   previewPlayButton: "#preview-play-button",
   previewResetButton: "#preview-reset-button",
   previewStatus: "#preview-status",
@@ -60,14 +62,25 @@ const STATUS_MESSAGES = Object.freeze({
   ready: "स्टूडियो तैयार है। फोटो या वीडियो चुनकर शुरुआत करें।",
   mediaReady: "मीडिया तैयार है।",
   mediaCleared: "मीडिया हटा दिया गया है।",
+
   previewUnavailable:
     "Preview renderer अभी उपलब्ध नहीं है। मीडिया का native preview उपलब्ध होने पर वहीं से playback किया जा सकता है।",
+  previewNoMedia: "Preview चलाने के लिए पहले फोटो या वीडियो चुनें।",
   previewReady: "Preview तैयार है।",
+  previewPlaying: "Preview चल रहा है।",
+  previewReset: "Preview रीसेट कर दिया गया है।",
+  previewError: "Canvas preview में समस्या आई।",
+
+  rendererUnavailable:
+    "Canvas preview इस ब्राउज़र या वर्तमान पेज पर उपलब्ध नहीं है।",
+
   formPrevented:
     "यह ऐप browser में locally काम करता है। अभी server submission आवश्यक नहीं है।",
+
   serviceWorkerUnsupported:
     "इस ब्राउज़र में PWA service worker उपलब्ध नहीं है। ऐप फिर भी सामान्य रूप से काम करेगा।",
-  serviceWorkerReady: "PWA offline support के लिए service worker सक्रिय है।",
+  serviceWorkerReady:
+    "PWA offline support के लिए service worker सक्रिय है।",
   serviceWorkerFailed:
     "Service worker register नहीं हो सका। मुख्य app फिर भी सामान्य रूप से काम करेगी।",
 });
@@ -113,7 +126,7 @@ const appState = {
     quote: "not-available",
     tts: "not-available",
     ticker: "not-initialized",
-    canvasRenderer: "not-available",
+    canvasRenderer: "not-initialized",
     recorder: "not-available",
   },
 
@@ -125,6 +138,7 @@ const appState = {
 let elements = null;
 let mediaModule = null;
 let tickerModule = null;
+let canvasRendererModule = null;
 let cleanupCallbacks = [];
 
 /**
@@ -154,8 +168,8 @@ async function initApp() {
     bindAppEvents();
 
     initializeMediaModule();
-
     initializeTickerModule();
+    initializeCanvasRendererModule();
 
     initializePreviewControls();
 
@@ -208,6 +222,7 @@ function cacheElements() {
 
     tickerRoot: document.querySelector(SELECTORS.tickerRoot),
 
+    previewCanvas: document.querySelector(SELECTORS.previewCanvas),
     previewPlayButton: document.querySelector(
       SELECTORS.previewPlayButton
     ),
@@ -278,6 +293,8 @@ function bindAppEvents() {
 
   /**
    * Keep app-level preview actions synchronized with media removal.
+   *
+   * media.js remains the owner of the actual removal operation.
    */
   if (elements.mediaRemoveButton instanceof HTMLButtonElement) {
     const handler = handleMediaRemoveButtonClick;
@@ -307,6 +324,26 @@ function initializeMediaModule() {
       onError: handleMediaError,
       onFitModeChange: handleMediaFitModeChange,
     });
+
+    if (
+      !mediaModule ||
+      typeof mediaModule.init !== "function"
+    ) {
+      appState.modules.media = "error";
+
+      const error = new Error(
+        "Media module factory did not return a valid module."
+      );
+
+      showError("मीडिया मॉड्यूल उपलब्ध नहीं है।");
+      logError(
+        "Media module factory returned an invalid module.",
+        error
+      );
+
+      mediaModule = null;
+      return;
+    }
 
     const result = mediaModule.init();
 
@@ -377,31 +414,37 @@ function initializeTickerModule() {
         if (appState.modules.ticker !== "error") {
           appState.modules.ticker = "ready";
         }
+
+        requestCanvasRender();
       },
 
       onError: (error) => {
         appState.modules.ticker = "error";
 
         const message =
-          error?.message ||
-          "न्यूज़ टिकर में समस्या आई।";
+          getUserFacingErrorMessage(
+            error,
+            "न्यूज़ टिकर में समस्या आई।"
+          );
 
         showError(message);
 
-        logError(
-          "News ticker module error.",
-          error
-        );
+        logError("News ticker module error.", error);
+
+        requestCanvasRender();
       },
 
       onReady: () => {
         appState.modules.ticker = "ready";
+        requestCanvasRender();
       },
 
       onVisibilityChange: () => {
         if (appState.modules.ticker !== "error") {
           appState.modules.ticker = "ready";
         }
+
+        requestCanvasRender();
       },
     });
 
@@ -415,9 +458,7 @@ function initializeTickerModule() {
         "News ticker module factory did not return a valid module."
       );
 
-      showError(
-        "न्यूज़ टिकर मॉड्यूल उपलब्ध नहीं है।"
-      );
+      showError("न्यूज़ टिकर मॉड्यूल उपलब्ध नहीं है।");
 
       logError(
         "News ticker module factory returned an invalid module.",
@@ -425,7 +466,6 @@ function initializeTickerModule() {
       );
 
       tickerModule = null;
-
       return;
     }
 
@@ -449,6 +489,7 @@ function initializeTickerModule() {
     }
 
     appState.modules.ticker = "ready";
+    requestCanvasRender();
   } catch (error) {
     appState.modules.ticker = "error";
 
@@ -467,23 +508,223 @@ function initializeTickerModule() {
 }
 
 /**
- * Preview controls.
+ * Canvas renderer module initialization.
  *
- * These controls are only useful when a renderer/action exists.
- * Native video controls inside media.js remain independent from this.
+ * canvas-renderer.js owns:
+ * - Canvas drawing
+ * - Canvas animation
+ * - Canvas frame scheduling
+ *
+ * script.js only coordinates lifecycle and user actions.
  */
-function initializePreviewControls() {
-  const hasCanvasRenderer =
-    appState.modules.canvasRenderer === "ready";
+function initializeCanvasRendererModule() {
+  appState.modules.canvasRenderer = "initializing";
 
-  setPreviewControlsEnabled(hasCanvasRenderer);
+  const canvas = elements?.previewCanvas;
 
-  if (hasCanvasRenderer) {
-    setPreviewStatus(STATUS_MESSAGES.previewReady);
+  if (!(canvas instanceof HTMLCanvasElement)) {
+    appState.modules.canvasRenderer = "not-available";
+
+    logError(
+      "Canvas preview element was not found or is invalid.",
+      new Error(`Missing or invalid element: ${SELECTORS.previewCanvas}`)
+    );
+
+    setPreviewStatus(STATUS_MESSAGES.rendererUnavailable);
     return;
   }
 
-  setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
+  if (
+    typeof canvas.getContext !== "function" ||
+    !canvas.getContext("2d")
+  ) {
+    appState.modules.canvasRenderer = "not-available";
+
+    logError(
+      "Canvas 2D context is not available.",
+      new Error("The preview canvas does not expose a usable 2D context.")
+    );
+
+    setPreviewStatus(STATUS_MESSAGES.rendererUnavailable);
+    return;
+  }
+
+  if (typeof createCanvasRendererModule !== "function") {
+    appState.modules.canvasRenderer = "not-available";
+
+    const error = new Error(
+      "Canvas renderer factory is not available."
+    );
+
+    logError(
+      "Canvas renderer factory import is unavailable.",
+      error
+    );
+
+    setPreviewStatus(STATUS_MESSAGES.rendererUnavailable);
+    return;
+  }
+
+  try {
+    canvasRendererModule = createCanvasRendererModule({
+      canvas,
+      mediaModule,
+      tickerModule,
+
+      onReady: () => {
+        appState.modules.canvasRenderer = "ready";
+
+        updatePreviewControlsFromMediaState();
+
+        if (appState.media.hasMedia) {
+          setPreviewStatus(STATUS_MESSAGES.previewReady);
+        }
+      },
+
+      onChange: (event) => {
+        /*
+         * The renderer owns canvas rendering and animation.
+         * Do not call requestRender() here because doing so could
+         * create a recursive render/change cycle.
+         */
+        if (
+          event?.type === "ready" &&
+          appState.modules.canvasRenderer !== "error"
+        ) {
+          appState.modules.canvasRenderer = "ready";
+        }
+
+        updatePreviewControlsFromMediaState();
+      },
+
+      onError: (error) => {
+        appState.modules.canvasRenderer = "error";
+
+        const message = getUserFacingErrorMessage(
+          error,
+          STATUS_MESSAGES.previewError
+        );
+
+        setPreviewStatus(message);
+        showError(message);
+
+        logError("Canvas renderer error.", error);
+
+        /*
+         * Native media functionality remains independent and should
+         * continue working even if canvas rendering fails.
+         */
+        updatePreviewControlsFromMediaState();
+      },
+    });
+
+    if (
+      !canvasRendererModule ||
+      typeof canvasRendererModule.init !== "function"
+    ) {
+      appState.modules.canvasRenderer = "error";
+
+      const error = new Error(
+        "Canvas renderer factory did not return a valid module."
+      );
+
+      setPreviewStatus(STATUS_MESSAGES.rendererUnavailable);
+      logError(
+        "Canvas renderer factory returned an invalid module.",
+        error
+      );
+
+      canvasRendererModule = null;
+      return;
+    }
+
+    const result = canvasRendererModule.init();
+
+    if (!result?.ok) {
+      appState.modules.canvasRenderer = "error";
+
+      const message =
+        result?.error?.message ||
+        STATUS_MESSAGES.previewError;
+
+      setPreviewStatus(message);
+      showError(message);
+
+      logError(
+        "Canvas renderer initialization failed.",
+        result?.error
+      );
+
+      return;
+    }
+
+    appState.modules.canvasRenderer = "ready";
+
+    updatePreviewControlsFromMediaState();
+    requestCanvasRender();
+  } catch (error) {
+    appState.modules.canvasRenderer = "error";
+
+    const message = getUserFacingErrorMessage(
+      error,
+      STATUS_MESSAGES.previewError
+    );
+
+    setPreviewStatus(message);
+    showError(message);
+
+    logError(
+      "Canvas renderer threw during initialization.",
+      error
+    );
+
+    /*
+     * Do not throw again. The rest of the application, including
+     * native media preview and ticker settings, must remain usable.
+     */
+  }
+}
+
+/**
+ * Safely request a canvas render.
+ *
+ * This helper does not create an animation loop. The renderer module
+ * remains the sole owner of requestAnimationFrame and canvas drawing.
+ */
+function requestCanvasRender() {
+  if (
+    appState.modules.canvasRenderer !== "ready" ||
+    !canvasRendererModule ||
+    typeof canvasRendererModule.requestRender !== "function"
+  ) {
+    return;
+  }
+
+  try {
+    const result = canvasRendererModule.requestRender();
+
+    if (result?.ok === false) {
+      logError(
+        "Canvas renderer requestRender returned a failure.",
+        result?.error
+      );
+    }
+  } catch (error) {
+    logError(
+      "Canvas renderer requestRender failed.",
+      error
+    );
+  }
+}
+
+/**
+ * Preview controls.
+ *
+ * Controls are enabled only when both the renderer and media are ready.
+ * Native video controls inside media.js remain independent.
+ */
+function initializePreviewControls() {
+  updatePreviewControlsFromMediaState();
 }
 
 /**
@@ -493,6 +734,8 @@ function handleMediaChange(event) {
   syncMediaState();
 
   const reason = normalizeString(event?.reason);
+
+  requestCanvasRender();
 
   if (reason === "ready") {
     setStatus(STATUS_MESSAGES.mediaReady);
@@ -524,24 +767,28 @@ function handleMediaChange(event) {
  * Handles media-module errors.
  */
 function handleMediaError(event) {
-  const message =
-    event?.error?.message ||
-    "मीडिया फ़ाइल को संसाधित नहीं किया जा सका।";
+  const message = getUserFacingErrorMessage(
+    event?.error,
+    "मीडिया फ़ाइल को संसाधित नहीं किया जा सका।"
+  );
 
   showError(message);
+  requestCanvasRender();
 }
 
 /**
  * Handles fit-mode changes from media.js.
+ *
+ * media.js remains the owner of the fit-mode state.
  */
 function handleMediaFitModeChange(event) {
   const fitMode = normalizeString(event?.fitMode);
 
-  if (!fitMode) {
-    return;
+  if (fitMode) {
+    appState.media.fitMode = fitMode;
   }
 
-  appState.media.fitMode = fitMode;
+  requestCanvasRender();
 }
 
 /**
@@ -553,6 +800,7 @@ function handleMediaRemoveButtonClick() {
   window.setTimeout(() => {
     syncMediaState();
     updatePreviewControlsFromMediaState();
+    requestCanvasRender();
   }, 0);
 }
 
@@ -560,7 +808,7 @@ function handleMediaRemoveButtonClick() {
  * Synchronize appState.media with media.js.
  */
 function syncMediaState() {
-  if (!mediaModule) {
+  if (!mediaModule || typeof mediaModule.getState !== "function") {
     return;
   }
 
@@ -585,8 +833,8 @@ function syncMediaState() {
 /**
  * Update preview actions based on actual current state.
  *
- * Since canvas-renderer.js is not yet implemented, these buttons remain
- * disabled unless that module becomes available.
+ * Required condition:
+ * renderer ready AND media available
  *
  * Native HTML video controls are not affected.
  */
@@ -599,9 +847,25 @@ function updatePreviewControlsFromMediaState() {
 
   setPreviewControlsEnabled(shouldEnable);
 
-  if (!shouldEnable && !appState.media.hasMedia) {
+  if (!appState.media.hasMedia) {
     setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
+    return;
   }
+
+  if (!rendererReady) {
+    setPreviewStatus(STATUS_MESSAGES.rendererUnavailable);
+    return;
+  }
+
+  if (
+    appState.modules.canvasRenderer === "error" ||
+    appState.modules.canvasRenderer === "not-available"
+  ) {
+    setPreviewStatus(STATUS_MESSAGES.rendererUnavailable);
+    return;
+  }
+
+  setPreviewStatus(STATUS_MESSAGES.previewReady);
 }
 
 /**
@@ -617,28 +881,128 @@ function handleFormSubmit(event) {
 }
 
 /**
- * Future canvas-renderer integration point.
+ * Play canvas preview using the actual renderer.
  */
 function handlePreviewPlayRequest() {
-  if (appState.modules.canvasRenderer !== "ready") {
-    setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
-    setStatus(STATUS_MESSAGES.previewUnavailable);
+  const rendererReady =
+    appState.modules.canvasRenderer === "ready";
+
+  if (!rendererReady || !canvasRendererModule) {
+    setPreviewStatus(STATUS_MESSAGES.rendererUnavailable);
+    setStatus(STATUS_MESSAGES.rendererUnavailable);
     return;
   }
 
-  setPreviewStatus(STATUS_MESSAGES.previewReady);
+  if (!appState.media.hasMedia) {
+    setPreviewStatus(STATUS_MESSAGES.previewNoMedia);
+    setStatus(STATUS_MESSAGES.previewNoMedia);
+    return;
+  }
+
+  if (typeof canvasRendererModule.play !== "function") {
+    const error = new Error(
+      "Canvas renderer play method is unavailable."
+    );
+
+    setPreviewStatus(STATUS_MESSAGES.previewError);
+    showError(STATUS_MESSAGES.previewError);
+    logError("Canvas renderer play method is unavailable.", error);
+    return;
+  }
+
+  try {
+    const result = canvasRendererModule.play();
+
+    if (result?.ok === false) {
+      const message =
+        result?.error?.message ||
+        STATUS_MESSAGES.previewError;
+
+      setPreviewStatus(message);
+      showError(message);
+
+      logError(
+        "Canvas renderer play operation failed.",
+        result?.error
+      );
+
+      return;
+    }
+
+    setPreviewStatus(STATUS_MESSAGES.previewPlaying);
+    setStatus(STATUS_MESSAGES.previewPlaying);
+  } catch (error) {
+    const message = getUserFacingErrorMessage(
+      error,
+      STATUS_MESSAGES.previewError
+    );
+
+    setPreviewStatus(message);
+    showError(message);
+
+    logError("Canvas renderer play operation threw.", error);
+  }
 }
 
 /**
- * Future canvas-renderer reset integration point.
+ * Reset canvas preview using the actual renderer.
  */
 function handlePreviewResetRequest() {
-  if (appState.modules.canvasRenderer !== "ready") {
-    setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
+  const rendererReady =
+    appState.modules.canvasRenderer === "ready";
+
+  if (!rendererReady || !canvasRendererModule) {
+    setPreviewStatus(STATUS_MESSAGES.rendererUnavailable);
     return;
   }
 
-  setPreviewStatus(STATUS_MESSAGES.previewReady);
+  if (typeof canvasRendererModule.reset !== "function") {
+    const error = new Error(
+      "Canvas renderer reset method is unavailable."
+    );
+
+    setPreviewStatus(STATUS_MESSAGES.previewError);
+    showError(STATUS_MESSAGES.previewError);
+    logError("Canvas renderer reset method is unavailable.", error);
+    return;
+  }
+
+  try {
+    const result = canvasRendererModule.reset();
+
+    if (result?.ok === false) {
+      const message =
+        result?.error?.message ||
+        STATUS_MESSAGES.previewError;
+
+      setPreviewStatus(message);
+      showError(message);
+
+      logError(
+        "Canvas renderer reset operation failed.",
+        result?.error
+      );
+
+      return;
+    }
+
+    if (appState.media.hasMedia) {
+      setPreviewStatus(STATUS_MESSAGES.previewReset);
+      setStatus(STATUS_MESSAGES.previewReset);
+    } else {
+      setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
+    }
+  } catch (error) {
+    const message = getUserFacingErrorMessage(
+      error,
+      STATUS_MESSAGES.previewError
+    );
+
+    setPreviewStatus(message);
+    showError(message);
+
+    logError("Canvas renderer reset operation threw.", error);
+  }
 }
 
 /**
@@ -850,11 +1214,15 @@ async function initializeServiceWorker() {
  */
 function renderInitialApplicationState() {
   syncMediaState();
-
   updatePreviewControlsFromMediaState();
+  requestCanvasRender();
 
   if (!appState.media.hasMedia) {
     setPreviewStatus(STATUS_MESSAGES.previewUnavailable);
+  } else if (
+    appState.modules.canvasRenderer === "ready"
+  ) {
+    setPreviewStatus(STATUS_MESSAGES.previewReady);
   }
 }
 
@@ -1031,6 +1399,9 @@ function normalizeString(value) {
 
 /**
  * Internal cleanup hook.
+ *
+ * Renderer is destroyed before media and ticker so that any renderer
+ * listeners attached to media elements are removed first.
  */
 function cleanupApp() {
   for (const cleanup of cleanupCallbacks.splice(0)) {
@@ -1044,9 +1415,24 @@ function cleanupApp() {
     }
   }
 
+  if (canvasRendererModule) {
+    try {
+      if (typeof canvasRendererModule.destroy === "function") {
+        canvasRendererModule.destroy();
+      }
+    } catch (error) {
+      logError(
+        "Canvas renderer cleanup failed.",
+        error
+      );
+    }
+  }
+
   if (mediaModule) {
     try {
-      mediaModule.destroy();
+      if (typeof mediaModule.destroy === "function") {
+        mediaModule.destroy();
+      }
     } catch (error) {
       logError(
         "Media module cleanup failed.",
@@ -1057,7 +1443,9 @@ function cleanupApp() {
 
   if (tickerModule) {
     try {
-      tickerModule.destroy();
+      if (typeof tickerModule.destroy === "function") {
+        tickerModule.destroy();
+      }
     } catch (error) {
       logError(
         "News ticker module cleanup failed.",
@@ -1066,11 +1454,15 @@ function cleanupApp() {
     }
   }
 
+  canvasRendererModule = null;
   mediaModule = null;
   tickerModule = null;
 
+  appState.modules.canvasRenderer = "not-initialized";
+  appState.modules.media = "not-initialized";
   appState.modules.ticker = "not-initialized";
 
+  appState.media.initialized = false;
   appState.initialized = false;
   appState.initializing = false;
 }
