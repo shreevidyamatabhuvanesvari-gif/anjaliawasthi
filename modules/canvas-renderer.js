@@ -8,24 +8,33 @@
 const CONFIG = Object.freeze({
   WIDTH: 1080,
   HEIGHT: 1920,
+
   MIN_FONT_SIZE: 16,
   MAX_FONT_SIZE: 96,
+
   MIN_SPEED: 1,
   MAX_SPEED: 20,
   SPEED_PX_PER_SECOND: 12,
+
   MIN_BAR_HEIGHT: 64,
   MAX_BAR_HEIGHT: 240,
+
   MIN_PADDING: 12,
   MAX_PADDING: 36,
   PADDING_RATIO: 0.35,
+
   MIN_GAP: 48,
   GAP_RATIO: 1.5,
+
   MAX_DELTA_SECONDS: 0.25,
   VIDEO_READY_STATE: 2,
+
   EMPTY_BG: "#161616",
   EMPTY_TEXT: "#B8B8B8",
+
   TICKER_TEXT: "#FFFFFF",
   TICKER_BG: "#111111",
+
   FONT_FAMILY:
     '"Noto Sans Devanagari", "Nirmala UI", Mangal, sans-serif',
 });
@@ -46,40 +55,44 @@ const EMPTY_TICKER = Object.freeze({
   bold: true,
 });
 
-/**
- * Creates the 9:16 preview renderer.
- *
- * @param {object} options
- * @param {HTMLCanvasElement} options.canvas
- * @param {object|null} options.mediaModule
- * @param {object|null} options.tickerModule
- * @param {Function} [options.onReady]
- * @param {Function} [options.onChange]
- * @param {Function} [options.onError]
- * @returns {object}
- */
 export function createCanvasRendererModule(options = {}) {
   let canvas = options.canvas ?? null;
   let ctx = null;
+
   let mediaModule = options.mediaModule ?? null;
   let tickerModule = options.tickerModule ?? null;
 
   const callbacks = {
-    onReady: typeof options.onReady === "function" ? options.onReady : null,
-    onChange: typeof options.onChange === "function" ? options.onChange : null,
-    onError: typeof options.onError === "function" ? options.onError : null,
+    onReady:
+      typeof options.onReady === "function"
+        ? options.onReady
+        : null,
+
+    onChange:
+      typeof options.onChange === "function"
+        ? options.onChange
+        : null,
+
+    onError:
+      typeof options.onError === "function"
+        ? options.onError
+        : null,
   };
 
   const state = {
     initialized: false,
     destroyed: false,
     playing: false,
+
     animationFrameId: null,
     lastTimestamp: null,
+
     tickerOffset: 0,
     tickerTextWidth: 0,
+
     mediaReady: false,
     currentFitMode: "contain",
+
     lastError: null,
     needsContinuousAnimation: false,
   };
@@ -92,11 +105,14 @@ export function createCanvasRendererModule(options = {}) {
     tickerGap: 0,
     tickerCycle: 0,
     tickerWidth: 0,
+
     boundMediaElement: null,
     mediaCleanup: [],
     moduleCleanup: [],
+
     motionQuery: null,
     colorProbeContext: null,
+
     lastSignature: "",
   };
 
@@ -109,30 +125,46 @@ export function createCanvasRendererModule(options = {}) {
         return performance.now();
       }
     } catch {
-      // Date.now fallback below.
+      // Fall through to Date.now().
     }
 
     return Date.now();
   }
 
   function safeCallback(fn, ...args) {
-    if (typeof fn !== "function") return;
+    if (typeof fn !== "function") {
+      return;
+    }
 
     try {
       fn(...args);
     } catch (error) {
-      reportError("Renderer callback failed.", error, false);
+      reportError(
+        "Renderer callback failed.",
+        error,
+        false
+      );
     }
   }
 
-  function reportError(message, cause = null, notify = true) {
+  function reportError(
+    message,
+    cause = null,
+    notify = true
+  ) {
     const error =
-      cause instanceof Error ? cause : new Error(message);
+      cause instanceof Error
+        ? cause
+        : new Error(message);
 
-    state.lastError = error.message || message;
+    state.lastError =
+      error.message || message;
 
     if (notify) {
-      safeCallback(callbacks.onError, error);
+      safeCallback(
+        callbacks.onError,
+        error
+      );
     }
 
     return {
@@ -141,41 +173,61 @@ export function createCanvasRendererModule(options = {}) {
     };
   }
 
-  /** @returns {Readonly<object>} */
   function getState() {
     return Object.freeze({
       initialized: state.initialized,
       destroyed: state.destroyed,
       playing: state.playing,
+
       animationFrameId: state.animationFrameId,
       lastTimestamp: state.lastTimestamp,
+
       tickerOffset: state.tickerOffset,
       tickerTextWidth: state.tickerTextWidth,
+
       mediaReady: state.mediaReady,
       currentFitMode: state.currentFitMode,
+
       lastError: state.lastError,
-      needsContinuousAnimation: state.needsContinuousAnimation,
+      needsContinuousAnimation:
+        state.needsContinuousAnimation,
     });
   }
 
-  function clamp(value, fallback, min, max) {
-    const n = Number(value);
+  function clamp(
+    value,
+    fallback,
+    min,
+    max
+  ) {
+    const number = Number(value);
 
-    return Number.isFinite(n)
-      ? Math.min(max, Math.max(min, n))
+    return Number.isFinite(number)
+      ? Math.min(
+          max,
+          Math.max(min, number)
+        )
       : fallback;
   }
 
   function text(value) {
-    return typeof value === "string" ? value.trim() : "";
+    return typeof value === "string"
+      ? value.trim()
+      : "";
   }
 
   function modulo(value, divisor) {
-    if (!Number.isFinite(value) || divisor <= 0) {
+    if (
+      !Number.isFinite(value) ||
+      divisor <= 0
+    ) {
       return 0;
     }
 
-    return ((value % divisor) + divisor) % divisor;
+    return (
+      ((value % divisor) + divisor) %
+      divisor
+    );
   }
 
   function invalidateCache() {
@@ -192,18 +244,22 @@ export function createCanvasRendererModule(options = {}) {
   }
 
   function validateCanvas() {
-    if (!(canvas instanceof HTMLCanvasElement)) {
+    if (
+      typeof HTMLCanvasElement === "undefined" ||
+      !(canvas instanceof HTMLCanvasElement)
+    ) {
       return reportError(
         "Preview canvas element is missing or invalid.",
-        new Error("Expected an HTMLCanvasElement.")
+        new Error(
+          "Expected an HTMLCanvasElement."
+        )
       );
     }
 
-    const valid =
-      canvas.width === CONFIG.WIDTH &&
-      canvas.height === CONFIG.HEIGHT;
-
-    if (!valid) {
+    if (
+      canvas.width !== CONFIG.WIDTH ||
+      canvas.height !== CONFIG.HEIGHT
+    ) {
       canvas.width = CONFIG.WIDTH;
       canvas.height = CONFIG.HEIGHT;
     }
@@ -224,7 +280,9 @@ export function createCanvasRendererModule(options = {}) {
     if (!ctx) {
       return reportError(
         "Canvas 2D rendering is unavailable in this browser.",
-        new Error("2D canvas context unavailable.")
+        new Error(
+          "2D canvas context unavailable."
+        )
       );
     }
 
@@ -236,7 +294,9 @@ export function createCanvasRendererModule(options = {}) {
   }
 
   function safeFitMode(value) {
-    return FIT_MODES.has(value) ? value : "contain";
+    return FIT_MODES.has(value)
+      ? value
+      : "contain";
   }
 
   function safeColor(value, fallback) {
@@ -255,17 +315,19 @@ export function createCanvasRendererModule(options = {}) {
         return candidate;
       }
     } catch {
-      // Canvas fallback.
+      // Continue with canvas color validation.
     }
 
     try {
       if (!cache.colorProbeContext) {
-        const probe = document.createElement("canvas");
+        const probe =
+          document.createElement("canvas");
 
         probe.width = 1;
         probe.height = 1;
 
-        cache.colorProbeContext = probe.getContext("2d");
+        cache.colorProbeContext =
+          probe.getContext("2d");
       }
 
       if (!cache.colorProbeContext) {
@@ -274,10 +336,14 @@ export function createCanvasRendererModule(options = {}) {
 
       const sentinel = "rgb(1, 2, 3)";
 
-      cache.colorProbeContext.fillStyle = sentinel;
-      cache.colorProbeContext.fillStyle = candidate;
+      cache.colorProbeContext.fillStyle =
+        sentinel;
 
-      return cache.colorProbeContext.fillStyle === sentinel
+      cache.colorProbeContext.fillStyle =
+        candidate;
+
+      return cache.colorProbeContext.fillStyle ===
+        sentinel
         ? fallback
         : candidate;
     } catch {
@@ -292,63 +358,101 @@ export function createCanvasRendererModule(options = {}) {
         typeof window !== "undefined" &&
         typeof window.matchMedia === "function"
       ) {
-        cache.motionQuery = window.matchMedia(
-          "(prefers-reduced-motion: reduce)"
-        );
+        cache.motionQuery =
+          window.matchMedia(
+            "(prefers-reduced-motion: reduce)"
+          );
       }
 
-      return Boolean(cache.motionQuery?.matches);
+      return Boolean(
+        cache.motionQuery?.matches
+      );
     } catch {
       return false;
     }
   }
 
+  /**
+   * Reads the exact render model exposed by news-ticker.js.
+   *
+   * Current news-ticker API:
+   * enabled, text, position, direction, speed,
+   * fontSize, textColor, backgroundColor, bold
+   */
   function tickerModel() {
     if (
       !tickerModule ||
-      typeof tickerModule.getRenderModel !== "function"
+      typeof tickerModule.getRenderModel !==
+        "function"
     ) {
       return EMPTY_TICKER;
     }
 
     try {
-      const model = tickerModule.getRenderModel();
+      const model =
+        tickerModule.getRenderModel();
 
-      if (!model || typeof model !== "object") {
+      if (
+        !model ||
+        typeof model !== "object"
+      ) {
         return EMPTY_TICKER;
       }
 
       const headline = text(model.text);
 
+      /*
+       * Compatibility:
+       * - New/current API uses model.enabled.
+       * - Older renderer contracts may use model.visible.
+       */
+      const enabled =
+        typeof model.enabled === "boolean"
+          ? model.enabled
+          : Boolean(model.visible);
+
       return Object.freeze({
-        visible: Boolean(model.visible) && headline.length > 0,
+        visible:
+          enabled && headline.length > 0,
+
         text: headline,
-        position: POSITIONS.has(model.position)
+
+        position: POSITIONS.has(
+          model.position
+        )
           ? model.position
           : "bottom",
-        direction: DIRECTIONS.has(model.direction)
+
+        direction: DIRECTIONS.has(
+          model.direction
+        )
           ? model.direction
           : "rtl",
+
         speed: clamp(
           model.speed,
           8,
           CONFIG.MIN_SPEED,
           CONFIG.MAX_SPEED
         ),
+
         fontSize: clamp(
           model.fontSize,
           36,
           CONFIG.MIN_FONT_SIZE,
           CONFIG.MAX_FONT_SIZE
         ),
+
         textColor: safeColor(
           model.textColor,
           CONFIG.TICKER_TEXT
         ),
+
         backgroundColor: safeColor(
           model.backgroundColor,
           CONFIG.TICKER_BG
         ),
+
         bold: Boolean(model.bold),
       });
     } catch (error) {
@@ -364,7 +468,8 @@ export function createCanvasRendererModule(options = {}) {
   function mediaInfo() {
     if (
       !mediaModule ||
-      typeof mediaModule.getState !== "function"
+      typeof mediaModule.getState !==
+        "function"
     ) {
       return {
         state: null,
@@ -375,9 +480,13 @@ export function createCanvasRendererModule(options = {}) {
     let mediaState;
 
     try {
-      mediaState = mediaModule.getState();
+      mediaState =
+        mediaModule.getState();
     } catch (error) {
-      reportError("Media state could not be read.", error);
+      reportError(
+        "Media state could not be read.",
+        error
+      );
 
       return {
         state: null,
@@ -387,7 +496,8 @@ export function createCanvasRendererModule(options = {}) {
 
     if (
       !mediaState?.hasMedia ||
-      typeof mediaModule.getMediaElement !== "function"
+      typeof mediaModule.getMediaElement !==
+        "function"
     ) {
       return {
         state: mediaState,
@@ -398,7 +508,8 @@ export function createCanvasRendererModule(options = {}) {
     try {
       return {
         state: mediaState,
-        element: mediaModule.getMediaElement(),
+        element:
+          mediaModule.getMediaElement(),
       };
     } catch (error) {
       reportError(
@@ -416,6 +527,8 @@ export function createCanvasRendererModule(options = {}) {
   function mediaDimensions(element, kind) {
     if (
       kind === "image" &&
+      typeof HTMLImageElement !==
+        "undefined" &&
       element instanceof HTMLImageElement
     ) {
       return element.naturalWidth > 0 &&
@@ -429,6 +542,8 @@ export function createCanvasRendererModule(options = {}) {
 
     if (
       kind === "video" &&
+      typeof HTMLVideoElement !==
+        "undefined" &&
       element instanceof HTMLVideoElement
     ) {
       return element.videoWidth > 0 &&
@@ -446,6 +561,8 @@ export function createCanvasRendererModule(options = {}) {
   function mediaReady(element, kind) {
     if (
       kind === "image" &&
+      typeof HTMLImageElement !==
+        "undefined" &&
       element instanceof HTMLImageElement
     ) {
       return (
@@ -457,10 +574,13 @@ export function createCanvasRendererModule(options = {}) {
 
     if (
       kind === "video" &&
+      typeof HTMLVideoElement !==
+        "undefined" &&
       element instanceof HTMLVideoElement
     ) {
       return (
-        element.readyState >= CONFIG.VIDEO_READY_STATE &&
+        element.readyState >=
+          CONFIG.VIDEO_READY_STATE &&
         element.videoWidth > 0 &&
         element.videoHeight > 0
       );
@@ -469,16 +589,6 @@ export function createCanvasRendererModule(options = {}) {
     return false;
   }
 
-  /**
-   * Computes centered contain/cover geometry without distorting aspect ratio.
-   *
-   * @param {number} sourceWidth
-   * @param {number} sourceHeight
-   * @param {number} targetWidth
-   * @param {number} targetHeight
-   * @param {"cover"|"contain"} fitMode
-   * @returns {{x:number,y:number,width:number,height:number,scale:number}}
-   */
   function fitRect(
     sourceWidth,
     sourceHeight,
@@ -486,15 +596,36 @@ export function createCanvasRendererModule(options = {}) {
     targetHeight,
     fitMode
   ) {
-    const sw = Math.max(1, Number(sourceWidth) || 1);
-    const sh = Math.max(1, Number(sourceHeight) || 1);
-    const tw = Math.max(1, Number(targetWidth) || 1);
-    const th = Math.max(1, Number(targetHeight) || 1);
+    const sw = Math.max(
+      1,
+      Number(sourceWidth) || 1
+    );
+
+    const sh = Math.max(
+      1,
+      Number(sourceHeight) || 1
+    );
+
+    const tw = Math.max(
+      1,
+      Number(targetWidth) || 1
+    );
+
+    const th = Math.max(
+      1,
+      Number(targetHeight) || 1
+    );
 
     const scale =
       fitMode === "cover"
-        ? Math.max(tw / sw, th / sh)
-        : Math.min(tw / sw, th / sh);
+        ? Math.max(
+            tw / sw,
+            th / sh
+          )
+        : Math.min(
+            tw / sw,
+            th / sh
+          );
 
     const width = sw * scale;
     const height = sh * scale;
@@ -509,28 +640,43 @@ export function createCanvasRendererModule(options = {}) {
   }
 
   function bindMediaElement(element) {
-    if (cache.boundMediaElement === element) {
+    if (
+      cache.boundMediaElement === element
+    ) {
       return;
     }
 
-    for (const cleanup of cache.mediaCleanup.splice(0)) {
+    for (
+      const cleanup of cache.mediaCleanup.splice(
+        0
+      )
+    ) {
       try {
         cleanup();
       } catch {
-        // Cleanup is best effort.
+        // Best effort.
       }
     }
 
     cache.boundMediaElement = null;
 
-    if (
-      !(element instanceof HTMLImageElement) &&
-      !(element instanceof HTMLVideoElement)
-    ) {
+    const validImage =
+      typeof HTMLImageElement !==
+        "undefined" &&
+      element instanceof HTMLImageElement;
+
+    const validVideo =
+      typeof HTMLVideoElement !==
+        "undefined" &&
+      element instanceof HTMLVideoElement;
+
+    if (!validImage && !validVideo) {
       return;
     }
 
-    const handler = () => requestRender();
+    const handler = () => {
+      requestRender();
+    };
 
     const events = [
       "load",
@@ -547,10 +693,16 @@ export function createCanvasRendererModule(options = {}) {
     ];
 
     for (const eventName of events) {
-      element.addEventListener(eventName, handler);
+      element.addEventListener(
+        eventName,
+        handler
+      );
 
       cache.mediaCleanup.push(() =>
-        element.removeEventListener(eventName, handler)
+        element.removeEventListener(
+          eventName,
+          handler
+        )
       );
     }
 
@@ -560,7 +712,8 @@ export function createCanvasRendererModule(options = {}) {
   function bindModuleListeners() {
     if (
       cache.motionQuery &&
-      typeof cache.motionQuery.addEventListener === "function"
+      typeof cache.motionQuery.addEventListener ===
+        "function"
     ) {
       const motionHandler = () => {
         state.tickerOffset = 0;
@@ -592,19 +745,24 @@ export function createCanvasRendererModule(options = {}) {
 
     if (
       typeof document !== "undefined" &&
-      typeof document.addEventListener === "function"
+      typeof document.addEventListener ===
+        "function"
     ) {
       const visibilityHandler = () => {
         if (document.hidden) {
           cancelLoop();
 
           state.lastTimestamp = null;
-          state.needsContinuousAnimation = false;
+          state.needsContinuousAnimation =
+            false;
 
           return;
         }
 
-        if (!state.initialized || state.destroyed) {
+        if (
+          !state.initialized ||
+          state.destroyed
+        ) {
           return;
         }
 
@@ -635,6 +793,7 @@ export function createCanvasRendererModule(options = {}) {
 
   function drawEmpty() {
     ctx.fillStyle = CONFIG.EMPTY_BG;
+
     ctx.fillRect(
       0,
       0,
@@ -654,7 +813,10 @@ export function createCanvasRendererModule(options = {}) {
     );
   }
 
-  function drawMedia(mediaState, element) {
+  function drawMedia(
+    mediaState,
+    element
+  ) {
     ctx.fillStyle = CONFIG.EMPTY_BG;
 
     ctx.fillRect(
@@ -666,15 +828,22 @@ export function createCanvasRendererModule(options = {}) {
 
     state.mediaReady = false;
 
-    if (!mediaState?.hasMedia || !element) {
+    if (
+      !mediaState?.hasMedia ||
+      !element
+    ) {
       return false;
     }
 
-    const kind = text(mediaState.kind);
-    const dimensions = mediaDimensions(
-      element,
-      kind
+    const kind = text(
+      mediaState.kind
     );
+
+    const dimensions =
+      mediaDimensions(
+        element,
+        kind
+      );
 
     if (
       !dimensions ||
@@ -724,7 +893,8 @@ export function createCanvasRendererModule(options = {}) {
       CONFIG.MAX_PADDING,
       Math.max(
         CONFIG.MIN_PADDING,
-        model.fontSize * CONFIG.PADDING_RATIO
+        model.fontSize *
+          CONFIG.PADDING_RATIO
       )
     );
 
@@ -732,7 +902,9 @@ export function createCanvasRendererModule(options = {}) {
       CONFIG.MAX_BAR_HEIGHT,
       Math.max(
         CONFIG.MIN_BAR_HEIGHT,
-        Math.ceil(model.fontSize * 1.8)
+        Math.ceil(
+          model.fontSize * 1.8
+        )
       )
     );
 
@@ -743,17 +915,21 @@ export function createCanvasRendererModule(options = {}) {
 
     const key = `${model.text}|${font}`;
 
-    if (key !== cache.tickerMetricKey) {
+    if (
+      key !== cache.tickerMetricKey
+    ) {
       ctx.font = font;
 
       cache.tickerMetricKey = key;
       cache.tickerFont = font;
       cache.tickerText = model.text;
       cache.tickerGap = gap;
+
       cache.tickerWidth = Math.max(
         1,
         ctx.measureText(model.text).width
       );
+
       cache.tickerCycle =
         cache.tickerWidth + gap;
 
@@ -761,8 +937,11 @@ export function createCanvasRendererModule(options = {}) {
         cache.tickerWidth;
 
       state.tickerOffset = 0;
-    } else if (cache.tickerGap !== gap) {
+    } else if (
+      cache.tickerGap !== gap
+    ) {
       cache.tickerGap = gap;
+
       cache.tickerCycle =
         cache.tickerWidth + gap;
     }
@@ -780,7 +959,10 @@ export function createCanvasRendererModule(options = {}) {
     };
   }
 
-  function tickerY(position, barHeight) {
+  function tickerY(
+    position,
+    barHeight
+  ) {
     if (position === "top") {
       return 0;
     }
@@ -794,12 +976,20 @@ export function createCanvasRendererModule(options = {}) {
     return canvas.height - barHeight;
   }
 
-  function drawTicker(model, deltaSeconds) {
-    if (!model.visible || !model.text) {
+  function drawTicker(
+    model,
+    deltaSeconds
+  ) {
+    if (
+      !model.visible ||
+      !model.text
+    ) {
       return;
     }
 
-    const metrics = tickerMetrics(model);
+    const metrics =
+      tickerMetrics(model);
+
     const y = tickerY(
       model.position,
       metrics.barHeight
@@ -817,7 +1007,19 @@ export function createCanvasRendererModule(options = {}) {
         pxPerSecond * deltaSeconds;
     }
 
+    const centerY =
+      y + metrics.barHeight / 2;
+
     ctx.save();
+
+    ctx.beginPath();
+    ctx.rect(
+      0,
+      y,
+      canvas.width,
+      metrics.barHeight
+    );
+    ctx.clip();
 
     ctx.fillStyle =
       model.backgroundColor;
@@ -834,45 +1036,71 @@ export function createCanvasRendererModule(options = {}) {
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
 
-    if (model.direction === "rtl") {
-      const base =
-        canvas.width -
-        modulo(
-          state.tickerOffset,
-          metrics.cycle
-        );
+    const cycleOffset = modulo(
+      state.tickerOffset,
+      metrics.cycle
+    );
 
-      let x = base;
+    if (model.direction === "rtl") {
+      /*
+       * RTL: right to left.
+       * As tickerOffset increases, x decreases.
+       */
+      let x =
+        canvas.width - cycleOffset;
 
       while (x > -metrics.width) {
+        ctx.fillText(
+          model.text,
+          x,
+          centerY
+        );
+
         x -= metrics.cycle;
       }
+
+      x =
+        canvas.width -
+        cycleOffset -
+        metrics.cycle;
+
+      while (x + metrics.width > 0) {
+        ctx.fillText(
+          model.text,
+          x,
+          centerY
+        );
+
+        x -= metrics.cycle;
+      }
+    } else {
+      /*
+       * LTR: left to right.
+       * As tickerOffset increases, x increases.
+       */
+      let x =
+        -metrics.width + cycleOffset;
 
       while (x < canvas.width) {
         ctx.fillText(
           model.text,
           x,
-          y + metrics.barHeight / 2
+          centerY
         );
 
         x += metrics.cycle;
       }
-    } else {
-      const base =
-        -metrics.width +
-        modulo(
-          state.tickerOffset,
-          metrics.cycle
-        );
 
-      let x =
-        base - metrics.cycle;
+      x =
+        -metrics.width +
+        cycleOffset -
+        metrics.cycle;
 
       while (x < canvas.width) {
         ctx.fillText(
           model.text,
           x,
-          y + metrics.barHeight / 2
+          centerY
         );
 
         x += metrics.cycle;
@@ -895,6 +1123,7 @@ export function createCanvasRendererModule(options = {}) {
       text(mediaState?.fitMode),
       element ? element.tagName : "",
       Boolean(drawn),
+
       ticker.visible,
       ticker.text,
       ticker.position,
@@ -920,7 +1149,9 @@ export function createCanvasRendererModule(options = {}) {
       drawn
     );
 
-    if (next === cache.lastSignature) {
+    if (
+      next === cache.lastSignature
+    ) {
       return;
     }
 
@@ -951,7 +1182,8 @@ export function createCanvasRendererModule(options = {}) {
       renderStaticFrame();
 
       state.lastTimestamp = null;
-      state.needsContinuousAnimation = false;
+      state.needsContinuousAnimation =
+        false;
 
       return;
     }
@@ -983,12 +1215,11 @@ export function createCanvasRendererModule(options = {}) {
 
     bindMediaElement(element);
 
-    const fromMedia =
-      mediaState?.fitMode;
-
-    if (fromMedia) {
+    if (mediaState?.fitMode) {
       state.currentFitMode =
-        safeFitMode(fromMedia);
+        safeFitMode(
+          mediaState.fitMode
+        );
     } else if (
       typeof mediaModule?.getFitMode ===
       "function"
@@ -999,7 +1230,7 @@ export function createCanvasRendererModule(options = {}) {
             mediaModule.getFitMode()
           );
       } catch {
-        // Keep last valid fit mode.
+        // Keep the last valid fit mode.
       }
     }
 
@@ -1055,8 +1286,9 @@ export function createCanvasRendererModule(options = {}) {
       drawn &&
       text(mediaState?.kind) ===
         "video" &&
-      element instanceof
-        HTMLVideoElement &&
+      typeof HTMLVideoElement !==
+        "undefined" &&
+      element instanceof HTMLVideoElement &&
       !element.paused &&
       !element.ended;
 
@@ -1174,10 +1406,7 @@ export function createCanvasRendererModule(options = {}) {
               return;
             }
 
-            renderFrame(
-              timestamp
-            );
-
+            renderFrame(timestamp);
             scheduleLoop();
           } catch (error) {
             state.playing = false;
@@ -1211,17 +1440,12 @@ export function createCanvasRendererModule(options = {}) {
         );
       }
     } catch {
-      // Cancellation is best effort.
+      // Best effort.
     }
 
     state.animationFrameId = null;
   }
 
-  /**
-   * Initializes the renderer exactly once.
-   *
-   * @returns {{ok:true}|{ok:false,error:Error}}
-   */
   function init() {
     if (state.destroyed) {
       return reportError(
@@ -1240,8 +1464,7 @@ export function createCanvasRendererModule(options = {}) {
     }
 
     if (
-      typeof document ===
-      "undefined"
+      typeof document === "undefined"
     ) {
       return reportError(
         "Canvas renderer requires a browser document.",
@@ -1281,10 +1504,13 @@ export function createCanvasRendererModule(options = {}) {
       state.initialized = true;
       state.destroyed = false;
       state.playing = false;
+
       state.animationFrameId = null;
       state.lastTimestamp = null;
+
       state.tickerOffset = 0;
       state.tickerTextWidth = 0;
+
       state.mediaReady = false;
       state.lastError = null;
       state.needsContinuousAnimation =
@@ -1323,11 +1549,6 @@ export function createCanvasRendererModule(options = {}) {
     }
   }
 
-  /**
-   * Starts preview animation and makes a best-effort attempt to start video playback.
-   *
-   * @returns {{ok:true}|{ok:false,error:Error}}
-   */
   function play() {
     if (state.destroyed) {
       return reportError(
@@ -1364,22 +1585,25 @@ export function createCanvasRendererModule(options = {}) {
       element,
     } = mediaInfo();
 
-    if (
+    const isVideo =
       text(mediaState?.kind) ===
         "video" &&
-      element instanceof
-        HTMLVideoElement &&
+      typeof HTMLVideoElement !==
+        "undefined" &&
+      element instanceof HTMLVideoElement;
+
+    if (
+      isVideo &&
       element.paused
     ) {
       try {
-        const promise =
-          element.play();
+        const promise = element.play();
 
         promise?.catch?.(() => {
-          // Autoplay policy may reject non-gesture calls.
+          // Browser autoplay policy may reject playback.
         });
       } catch {
-        // Media playback may be blocked.
+        // Canvas ticker animation can still continue.
       }
     }
 
@@ -1399,11 +1623,6 @@ export function createCanvasRendererModule(options = {}) {
     };
   }
 
-  /**
-   * Pauses preview animation and the current video preview when applicable.
-   *
-   * @returns {{ok:true}|{ok:false,error:Error}}
-   */
   function pause() {
     if (state.destroyed) {
       return reportError(
@@ -1440,17 +1659,21 @@ export function createCanvasRendererModule(options = {}) {
       element,
     } = mediaInfo();
 
-    if (
+    const isVideo =
       text(mediaState?.kind) ===
         "video" &&
-      element instanceof
-        HTMLVideoElement &&
+      typeof HTMLVideoElement !==
+        "undefined" &&
+      element instanceof HTMLVideoElement;
+
+    if (
+      isVideo &&
       !element.paused
     ) {
       try {
         element.pause();
       } catch {
-        // Static rendering still works.
+        // Static rendering remains available.
       }
     }
 
@@ -1471,11 +1694,6 @@ export function createCanvasRendererModule(options = {}) {
     };
   }
 
-  /**
-   * Resets ticker position and video playback position to the beginning when seekable.
-   *
-   * @returns {{ok:true}|{ok:false,error:Error}}
-   */
   function reset() {
     if (state.destroyed) {
       return reportError(
@@ -1511,12 +1729,14 @@ export function createCanvasRendererModule(options = {}) {
       element,
     } = mediaInfo();
 
-    if (
+    const isVideo =
       text(mediaState?.kind) ===
         "video" &&
-      element instanceof
-        HTMLVideoElement
-    ) {
+      typeof HTMLVideoElement !==
+        "undefined" &&
+      element instanceof HTMLVideoElement;
+
+    if (isVideo) {
       try {
         element.pause();
       } catch {
@@ -1528,7 +1748,7 @@ export function createCanvasRendererModule(options = {}) {
           element.currentTime = 0;
         }
       } catch {
-        // Some sources are not seekable.
+        // Some sources may not be seekable.
       }
     }
 
@@ -1548,11 +1768,6 @@ export function createCanvasRendererModule(options = {}) {
     };
   }
 
-  /**
-   * Renders immediately and preserves the existing animation loop as the sole scheduler.
-   *
-   * @returns {{ok:true}|{ok:false,error:Error}}
-   */
   function requestRender() {
     if (state.destroyed) {
       return reportError(
@@ -1595,12 +1810,6 @@ export function createCanvasRendererModule(options = {}) {
     }
   }
 
-  /**
-   * Sets the renderer's local fit mode. The media module remains the owner of the setting.
-   *
-   * @param {unknown} fitMode
-   * @returns {{ok:true,fitMode:string}|{ok:false,error:Error}}
-   */
   function setFitMode(fitMode) {
     if (state.destroyed) {
       return reportError(
@@ -1622,12 +1831,10 @@ export function createCanvasRendererModule(options = {}) {
       );
     }
 
-    const next =
-      safeFitMode(fitMode);
+    const next = safeFitMode(fitMode);
 
     if (
-      next ===
-      state.currentFitMode
+      next === state.currentFitMode
     ) {
       return {
         ok: true,
@@ -1657,8 +1864,9 @@ export function createCanvasRendererModule(options = {}) {
 
   function cleanupListeners() {
     for (
-      const cleanup of
-        cache.mediaCleanup.splice(0)
+      const cleanup of cache.mediaCleanup.splice(
+        0
+      )
     ) {
       try {
         cleanup();
@@ -1670,8 +1878,9 @@ export function createCanvasRendererModule(options = {}) {
     cache.boundMediaElement = null;
 
     for (
-      const cleanup of
-        cache.moduleCleanup.splice(0)
+      const cleanup of cache.moduleCleanup.splice(
+        0
+      )
     ) {
       try {
         cleanup();
@@ -1683,11 +1892,6 @@ export function createCanvasRendererModule(options = {}) {
     cache.motionQuery = null;
   }
 
-  /**
-   * Destroys the renderer and all renderer-owned listeners/animation resources.
-   *
-   * @returns {{ok:true}}
-   */
   function destroy() {
     if (state.destroyed) {
       return {
