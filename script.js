@@ -7,6 +7,7 @@
  * Responsibilities:
  * - Bootstraps the application.
  * - Integrates the existing media module.
+ * - Integrates the existing news ticker module.
  * - Maintains centralized application state.
  * - Detects browser capabilities.
  * - Manages app-level status, loading, error and success UI.
@@ -18,6 +19,7 @@
  */
 
 import { createMediaModule } from "./modules/media.js";
+import { createNewsTickerModule } from "./modules/news-ticker.js";
 
 const APP = Object.freeze({
   NAME: "Swar Srijan Studio",
@@ -37,6 +39,8 @@ const SELECTORS = Object.freeze({
   mediaFileInput: "#media-file-input",
   mediaFitMode: "#media-fit-mode",
   mediaRemoveButton: "#media-remove-button",
+
+  tickerRoot: "#news-ticker",
 
   previewPlayButton: "#preview-play-button",
   previewResetButton: "#preview-reset-button",
@@ -108,7 +112,7 @@ const appState = {
     media: "not-initialized",
     quote: "not-available",
     tts: "not-available",
-    ticker: "not-available",
+    ticker: "not-initialized",
     canvasRenderer: "not-available",
     recorder: "not-available",
   },
@@ -120,6 +124,7 @@ const appState = {
 
 let elements = null;
 let mediaModule = null;
+let tickerModule = null;
 let cleanupCallbacks = [];
 
 /**
@@ -149,6 +154,8 @@ async function initApp() {
     bindAppEvents();
 
     initializeMediaModule();
+
+    initializeTickerModule();
 
     initializePreviewControls();
 
@@ -198,6 +205,8 @@ function cacheElements() {
     mediaRemoveButton: document.querySelector(
       SELECTORS.mediaRemoveButton
     ),
+
+    tickerRoot: document.querySelector(SELECTORS.tickerRoot),
 
     previewPlayButton: document.querySelector(
       SELECTORS.previewPlayButton
@@ -332,6 +341,128 @@ function initializeMediaModule() {
     );
 
     logError("Media module threw during initialization.", error);
+  }
+}
+
+/**
+ * News ticker module initialization.
+ *
+ * The ticker owns its own DOM rendering, settings and animation.
+ * script.js only connects it to the application lifecycle.
+ *
+ * Missing ticker DOM is treated as a graceful unavailable state and
+ * does not prevent the rest of the application from starting.
+ */
+function initializeTickerModule() {
+  appState.modules.ticker = "initializing";
+
+  const tickerRoot = elements?.tickerRoot;
+
+  if (!(tickerRoot instanceof HTMLElement)) {
+    appState.modules.ticker = "not-available";
+
+    logError(
+      "News ticker root element was not found.",
+      new Error(`Missing element: ${SELECTORS.tickerRoot}`)
+    );
+
+    return;
+  }
+
+  try {
+    tickerModule = createNewsTickerModule({
+      root: tickerRoot,
+
+      onChange: () => {
+        if (appState.modules.ticker !== "error") {
+          appState.modules.ticker = "ready";
+        }
+      },
+
+      onError: (error) => {
+        appState.modules.ticker = "error";
+
+        const message =
+          error?.message ||
+          "न्यूज़ टिकर में समस्या आई।";
+
+        showError(message);
+
+        logError(
+          "News ticker module error.",
+          error
+        );
+      },
+
+      onReady: () => {
+        appState.modules.ticker = "ready";
+      },
+
+      onVisibilityChange: () => {
+        if (appState.modules.ticker !== "error") {
+          appState.modules.ticker = "ready";
+        }
+      },
+    });
+
+    if (
+      !tickerModule ||
+      typeof tickerModule.init !== "function"
+    ) {
+      appState.modules.ticker = "error";
+
+      const error = new Error(
+        "News ticker module factory did not return a valid module."
+      );
+
+      showError(
+        "न्यूज़ टिकर मॉड्यूल उपलब्ध नहीं है।"
+      );
+
+      logError(
+        "News ticker module factory returned an invalid module.",
+        error
+      );
+
+      tickerModule = null;
+
+      return;
+    }
+
+    const result = tickerModule.init();
+
+    if (result && result.ok === false) {
+      appState.modules.ticker = "error";
+
+      const message =
+        result?.error?.message ||
+        "न्यूज़ टिकर मॉड्यूल प्रारंभ नहीं हो सका।";
+
+      showError(message);
+
+      logError(
+        "News ticker module initialization failed.",
+        result?.error
+      );
+
+      return;
+    }
+
+    appState.modules.ticker = "ready";
+  } catch (error) {
+    appState.modules.ticker = "error";
+
+    showError(
+      getUserFacingErrorMessage(
+        error,
+        "न्यूज़ टिकर सुविधा प्रारंभ नहीं हो सकी।"
+      )
+    );
+
+    logError(
+      "News ticker module threw during initialization.",
+      error
+    );
   }
 }
 
@@ -924,7 +1055,21 @@ function cleanupApp() {
     }
   }
 
+  if (tickerModule) {
+    try {
+      tickerModule.destroy();
+    } catch (error) {
+      logError(
+        "News ticker module cleanup failed.",
+        error
+      );
+    }
+  }
+
   mediaModule = null;
+  tickerModule = null;
+
+  appState.modules.ticker = "not-initialized";
 
   appState.initialized = false;
   appState.initializing = false;
