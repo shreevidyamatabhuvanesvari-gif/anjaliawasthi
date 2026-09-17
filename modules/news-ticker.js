@@ -2,7 +2,7 @@
  * Production-grade DOM news ticker module.
  *
  * Scope:
- * - Owns the DOM ticker preview rooted at #news-ticker (or a supplied root).
+ * - Owns the DOM ticker preview rooted at #news-ticker or a supplied root.
  * - Owns ticker settings, validation, animation metrics, accessibility state,
  *   and lifecycle cleanup.
  * - Does not own media, canvas rendering, recording, export, or application-wide state.
@@ -33,6 +33,8 @@ const DATA_ATTRIBUTES = Object.freeze({
   position: "data-position",
   direction: "data-direction",
   enabled: "data-enabled",
+  animation: "data-animation",
+  error: "data-ticker-error",
 });
 
 const SETTING_KEYS = Object.freeze([
@@ -47,8 +49,16 @@ const SETTING_KEYS = Object.freeze([
   "bold",
 ]);
 
-const POSITION_VALUES = Object.freeze(["top", "middle", "bottom"]);
-const DIRECTION_VALUES = Object.freeze(["rtl", "ltr"]);
+const POSITION_VALUES = Object.freeze([
+  "top",
+  "middle",
+  "bottom",
+]);
+
+const DIRECTION_VALUES = Object.freeze([
+  "rtl",
+  "ltr",
+]);
 
 const DEFAULTS = Object.freeze({
   enabled: true,
@@ -85,6 +95,7 @@ const ANIMATION = Object.freeze({
   pixelsPerSpeedUnit: 18,
   minTravelDistancePx: 1,
   resizeDebounceMs: 80,
+  restartDelayMs: 0,
 });
 
 const SOURCE_VALUES = Object.freeze({
@@ -98,7 +109,11 @@ const SOURCE_VALUES = Object.freeze({
 const NOOP = () => {};
 
 function isObject(value) {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+  );
 }
 
 function cloneSettings(settings) {
@@ -110,8 +125,14 @@ function clamp(value, min, max) {
 }
 
 function toFiniteNumber(value, fallback) {
-  const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) ? number : fallback;
+  const number =
+    typeof value === "number"
+      ? value
+      : Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : fallback;
 }
 
 function normalizeBoolean(value, fallback) {
@@ -119,11 +140,19 @@ function normalizeBoolean(value, fallback) {
     return value;
   }
 
-  if (value === "true" || value === "1" || value === 1) {
+  if (
+    value === "true" ||
+    value === "1" ||
+    value === 1
+  ) {
     return true;
   }
 
-  if (value === "false" || value === "0" || value === 0) {
+  if (
+    value === "false" ||
+    value === "0" ||
+    value === 0
+  ) {
     return false;
   }
 
@@ -135,20 +164,42 @@ function normalizeText(value, fallback = "") {
     return fallback;
   }
 
-  return value.trim().slice(0, LIMITS.headlineMaxLength);
+  return value
+    .trim()
+    .slice(0, LIMITS.headlineMaxLength);
 }
 
 function normalizeEnum(value, allowedValues, fallback) {
-  return allowedValues.includes(value) ? value : fallback;
+  return allowedValues.includes(value)
+    ? value
+    : fallback;
 }
 
-function normalizeSpeed(value, fallback = DEFAULTS.speed) {
-  const numeric = toFiniteNumber(value, fallback);
-  return clamp(Math.round(numeric), LIMITS.speedMin, LIMITS.speedMax);
+function normalizeSpeed(
+  value,
+  fallback = DEFAULTS.speed,
+) {
+  const numeric = toFiniteNumber(
+    value,
+    fallback,
+  );
+
+  return clamp(
+    Math.round(numeric),
+    LIMITS.speedMin,
+    LIMITS.speedMax,
+  );
 }
 
-function normalizeFontSize(value, fallback = DEFAULTS.fontSize) {
-  const numeric = toFiniteNumber(value, fallback);
+function normalizeFontSize(
+  value,
+  fallback = DEFAULTS.fontSize,
+) {
+  const numeric = toFiniteNumber(
+    value,
+    fallback,
+  );
+
   return clamp(
     Math.round(numeric),
     LIMITS.fontSizeMin,
@@ -156,27 +207,47 @@ function normalizeFontSize(value, fallback = DEFAULTS.fontSize) {
   );
 }
 
-function normalizeColor(value, fallback, documentRef) {
-  if (typeof value !== "string" || value.trim() === "") {
+function normalizeColor(
+  value,
+  fallback,
+  documentRef,
+) {
+  if (
+    typeof value !== "string" ||
+    value.trim() === ""
+  ) {
     return fallback;
   }
 
   const candidate = value.trim();
 
   try {
-    if (typeof CSS !== "undefined" && typeof CSS.supports === "function") {
-      return CSS.supports("color", candidate) ? candidate : fallback;
+    if (
+      typeof CSS !== "undefined" &&
+      typeof CSS.supports === "function"
+    ) {
+      return CSS.supports(
+        "color",
+        candidate,
+      )
+        ? candidate
+        : fallback;
     }
   } catch {
-    // Fall through to DOM-based validation.
+    // Continue with DOM-based validation.
   }
 
   if (documentRef?.createElement) {
     try {
-      const probe = documentRef.createElement("span");
+      const probe =
+        documentRef.createElement("span");
+
       probe.style.color = "";
       probe.style.color = candidate;
-      return probe.style.color ? candidate : fallback;
+
+      return probe.style.color
+        ? candidate
+        : fallback;
     } catch {
       return fallback;
     }
@@ -187,32 +258,48 @@ function normalizeColor(value, fallback, documentRef) {
 
 function normalizeSettings(
   input,
-  { previous = DEFAULTS, documentRef } = {},
+  {
+    previous = DEFAULTS,
+    documentRef,
+  } = {},
 ) {
-  const source = isObject(input) ? input : {};
-  const base = isObject(previous) ? previous : DEFAULTS;
+  const source = isObject(input)
+    ? input
+    : {};
 
-  const textColorFallback = normalizeColor(
-    base.textColor,
-    DEFAULTS.textColor,
-    documentRef,
-  );
+  const base = isObject(previous)
+    ? previous
+    : DEFAULTS;
 
-  const backgroundColorFallback = normalizeColor(
-    base.backgroundColor,
-    DEFAULTS.backgroundColor,
-    documentRef,
-  );
+  const textColorFallback =
+    normalizeColor(
+      base.textColor,
+      DEFAULTS.textColor,
+      documentRef,
+    );
+
+  const backgroundColorFallback =
+    normalizeColor(
+      base.backgroundColor,
+      DEFAULTS.backgroundColor,
+      documentRef,
+    );
 
   return {
     enabled: normalizeBoolean(
       source.enabled,
-      normalizeBoolean(base.enabled, DEFAULTS.enabled),
+      normalizeBoolean(
+        base.enabled,
+        DEFAULTS.enabled,
+      ),
     ),
 
     headline: normalizeText(
       source.headline,
-      normalizeText(base.headline, DEFAULTS.headline),
+      normalizeText(
+        base.headline,
+        DEFAULTS.headline,
+      ),
     ),
 
     position: normalizeEnum(
@@ -237,12 +324,18 @@ function normalizeSettings(
 
     speed: normalizeSpeed(
       source.speed,
-      normalizeSpeed(base.speed, DEFAULTS.speed),
+      normalizeSpeed(
+        base.speed,
+        DEFAULTS.speed,
+      ),
     ),
 
     fontSize: normalizeFontSize(
       source.fontSize,
-      normalizeFontSize(base.fontSize, DEFAULTS.fontSize),
+      normalizeFontSize(
+        base.fontSize,
+        DEFAULTS.fontSize,
+      ),
     ),
 
     textColor: normalizeColor(
@@ -259,26 +352,52 @@ function normalizeSettings(
 
     bold: normalizeBoolean(
       source.bold,
-      normalizeBoolean(base.bold, DEFAULTS.bold),
+      normalizeBoolean(
+        base.bold,
+        DEFAULTS.bold,
+      ),
     ),
   };
 }
 
-function createCustomEvent(documentRef, name, detail) {
-  if (typeof CustomEvent === "function") {
-    return new CustomEvent(name, { detail });
+function createCustomEvent(
+  documentRef,
+  name,
+  detail,
+) {
+  if (
+    typeof CustomEvent === "function"
+  ) {
+    return new CustomEvent(name, {
+      detail,
+    });
   }
 
   if (documentRef?.createEvent) {
-    const event = documentRef.createEvent("CustomEvent");
-    event.initCustomEvent(name, false, false, detail);
+    const event =
+      documentRef.createEvent(
+        "CustomEvent",
+      );
+
+    event.initCustomEvent(
+      name,
+      false,
+      false,
+      detail,
+    );
+
     return event;
   }
 
   return null;
 }
 
-function safeInvoke(callback, payload, onError, errorContext) {
+function safeInvoke(
+  callback,
+  payload,
+  onError,
+  errorContext,
+) {
   if (typeof callback !== "function") {
     return;
   }
@@ -290,7 +409,8 @@ function safeInvoke(callback, payload, onError, errorContext) {
       onError?.({
         module: MODULE_NAME,
         code: "CALLBACK_ERROR",
-        message: `${errorContext} callback threw an exception.`,
+        message:
+          `${errorContext} callback threw an exception.`,
         error,
       });
     } catch {
@@ -299,7 +419,10 @@ function safeInvoke(callback, payload, onError, errorContext) {
   }
 }
 
-function resolveDocument(root, explicitDocument) {
+function resolveDocument(
+  root,
+  explicitDocument,
+) {
   if (explicitDocument) {
     return explicitDocument;
   }
@@ -308,14 +431,19 @@ function resolveDocument(root, explicitDocument) {
     return root.ownerDocument;
   }
 
-  if (typeof document !== "undefined") {
+  if (
+    typeof document !== "undefined"
+  ) {
     return document;
   }
 
   return null;
 }
 
-function resolveRoot(rootOption, documentRef) {
+function resolveRoot(
+  rootOption,
+  documentRef,
+) {
   if (
     rootOption &&
     typeof rootOption === "object" &&
@@ -334,52 +462,69 @@ function resolveRoot(rootOption, documentRef) {
   }
 
   try {
-    return documentRef.querySelector(selector);
+    return documentRef.querySelector(
+      selector,
+    );
   } catch {
     return null;
   }
 }
 
-function readTextDirection(element, fallback = "rtl") {
-  const direction = element?.getAttribute?.(
-    DATA_ATTRIBUTES.direction,
-  );
-
-  return DIRECTION_VALUES.includes(direction)
-    ? direction
-    : fallback;
-}
-
-function setAttributeSafe(element, name, value) {
+function setAttributeSafe(
+  element,
+  name,
+  value,
+) {
   try {
-    if (value === null || value === undefined) {
+    if (
+      value === null ||
+      value === undefined
+    ) {
       element?.removeAttribute?.(name);
       return;
     }
 
-    element?.setAttribute?.(name, String(value));
+    element?.setAttribute?.(
+      name,
+      String(value),
+    );
   } catch {
-    // Ignore individual attribute failures in hardened/partial DOM environments.
+    // Ignore individual attribute failures.
   }
 }
 
-function setStylePropertySafe(style, property, value) {
+function setStylePropertySafe(
+  style,
+  property,
+  value,
+) {
   try {
-    style?.setProperty?.(property, value);
+    style?.setProperty?.(
+      property,
+      value,
+    );
   } catch {
     // Ignore unsupported style operations.
   }
 }
 
-function removeStylePropertySafe(style, property) {
+function removeStylePropertySafe(
+  style,
+  property,
+) {
   try {
-    style?.removeProperty?.(property);
+    style?.removeProperty?.(
+      property,
+    );
   } catch {
     // Ignore unsupported style operations.
   }
 }
 
-function getAnimationDurationSeconds(speed, distancePx) {
+function getAnimationDurationSeconds(
+  speed,
+  distancePx,
+) {
   const safeDistance = Math.max(
     ANIMATION.minTravelDistancePx,
     distancePx,
@@ -390,7 +535,8 @@ function getAnimationDurationSeconds(speed, distancePx) {
     speed * ANIMATION.pixelsPerSpeedUnit,
   );
 
-  const duration = safeDistance / pixelsPerSecond;
+  const duration =
+    safeDistance / pixelsPerSecond;
 
   return clamp(
     duration,
@@ -399,7 +545,9 @@ function getAnimationDurationSeconds(speed, distancePx) {
   );
 }
 
-function prefersReducedMotion(windowRef) {
+function prefersReducedMotion(
+  windowRef,
+) {
   try {
     return Boolean(
       windowRef
@@ -412,25 +560,23 @@ function prefersReducedMotion(windowRef) {
   }
 }
 
-function hasElementClassList(element) {
+function isElement(value) {
   return Boolean(
-    element?.classList?.add &&
-      element?.classList?.remove,
+    value &&
+    typeof value === "object" &&
+    value.nodeType === 1,
   );
 }
 
-function removeAllChildren(element) {
-  if (!element) {
-    return;
-  }
-
-  while (element.firstChild) {
-    element.removeChild(element.firstChild);
-  }
-}
-
-function createElement(documentRef, tagName, className) {
-  const element = documentRef?.createElement?.(tagName);
+function createElement(
+  documentRef,
+  tagName,
+  className,
+) {
+  const element =
+    documentRef?.createElement?.(
+      tagName,
+    );
 
   if (!element) {
     return null;
@@ -443,16 +589,83 @@ function createElement(documentRef, tagName, className) {
   return element;
 }
 
-function isElement(value) {
-  return Boolean(
-    value &&
-      typeof value === "object" &&
-      value.nodeType === 1,
+function getElementInlineStyleSnapshot(
+  element,
+) {
+  return {
+    cssText:
+      element?.getAttribute?.(
+        "style",
+      ) ?? null,
+  };
+}
+
+function restoreInlineStyle(
+  element,
+  snapshot,
+) {
+  if (!element || !snapshot) {
+    return;
+  }
+
+  try {
+    if (
+      snapshot.cssText === null ||
+      snapshot.cssText === ""
+    ) {
+      element.removeAttribute("style");
+    } else {
+      element.setAttribute(
+        "style",
+        snapshot.cssText,
+      );
+    }
+  } catch {
+    // Ignore restoration failures.
+  }
+}
+
+function getAttributeSnapshot(
+  element,
+  names,
+) {
+  const snapshot = {};
+
+  names.forEach((name) => {
+    snapshot[name] =
+      element?.getAttribute?.(
+        name,
+      ) ?? null;
+  });
+
+  return snapshot;
+}
+
+function restoreAttributes(
+  element,
+  snapshot,
+) {
+  if (!element || !snapshot) {
+    return;
+  }
+
+  Object.entries(snapshot).forEach(
+    ([name, value]) => {
+      setAttributeSafe(
+        element,
+        name,
+        value,
+      );
+    },
   );
 }
 
-export function createNewsTickerModule(options = {}) {
-  const factoryOptions = isObject(options) ? options : {};
+export function createNewsTickerModule(
+  options = {},
+) {
+  const factoryOptions = isObject(options)
+    ? options
+    : {};
 
   let root = factoryOptions.root ?? null;
 
@@ -463,7 +676,9 @@ export function createNewsTickerModule(options = {}) {
 
   const windowRef =
     documentRef?.defaultView ??
-    (typeof window !== "undefined" ? window : null);
+    (typeof window !== "undefined"
+      ? window
+      : null);
 
   let settings = normalizeSettings(
     factoryOptions.settings,
@@ -488,32 +703,39 @@ export function createNewsTickerModule(options = {}) {
   let animationSequence = 0;
   let currentDistancePx = 0;
 
-  let previousRootInlineStyles = null;
   let moduleRoot = null;
   let elements = null;
 
-  let ownsMarkup = false;
+  let originalChildNodes = null;
+  let originalRootClassName = null;
+  let originalRootAttributes = null;
+  let originalRootInlineStyle = null;
+
   let lastError = null;
   let readyNotified = false;
 
   const callbacks = {
     onChange:
-      typeof factoryOptions.onChange === "function"
+      typeof factoryOptions.onChange ===
+      "function"
         ? factoryOptions.onChange
         : NOOP,
 
     onError:
-      typeof factoryOptions.onError === "function"
+      typeof factoryOptions.onError ===
+      "function"
         ? factoryOptions.onError
         : NOOP,
 
     onReady:
-      typeof factoryOptions.onReady === "function"
+      typeof factoryOptions.onReady ===
+      "function"
         ? factoryOptions.onReady
         : NOOP,
 
     onVisibilityChange:
-      typeof factoryOptions.onVisibilityChange === "function"
+      typeof factoryOptions.onVisibilityChange ===
+      "function"
         ? factoryOptions.onVisibilityChange
         : NOOP,
   };
@@ -547,7 +769,7 @@ export function createNewsTickerModule(options = {}) {
     ) {
       setAttributeSafe(
         moduleRoot,
-        "data-ticker-error",
+        DATA_ATTRIBUTES.error,
         code,
       );
     }
@@ -564,7 +786,7 @@ export function createNewsTickerModule(options = {}) {
     ) {
       try {
         moduleRoot.removeAttribute(
-          "data-ticker-error",
+          DATA_ATTRIBUTES.error,
         );
       } catch {
         // Ignore.
@@ -573,8 +795,11 @@ export function createNewsTickerModule(options = {}) {
   };
 
   const getSerializableState = () => ({
-    initialized: lifecycle === "ready",
-    destroyed: lifecycle === "destroyed",
+    initialized:
+      lifecycle === "ready",
+
+    destroyed:
+      lifecycle === "destroyed",
 
     enabled: settings.enabled,
     headline: settings.headline,
@@ -586,7 +811,8 @@ export function createNewsTickerModule(options = {}) {
     backgroundColor: settings.backgroundColor,
     bold: settings.bold,
 
-    hasContent: settings.headline.length > 0,
+    hasContent:
+      settings.headline.length > 0,
 
     paused:
       pausedByApi ||
@@ -596,6 +822,8 @@ export function createNewsTickerModule(options = {}) {
 
     reducedMotion:
       prefersReducedMotion(windowRef),
+
+    currentDistancePx,
 
     lastError: lastError
       ? {
@@ -617,24 +845,31 @@ export function createNewsTickerModule(options = {}) {
     safeInvoke(
       callbacks.onChange,
       payload,
-      reportError.bind(
-        null,
-        "CALLBACK_ERROR",
-        "",
-      ),
+      (callbackError) => {
+        reportError(
+          "CALLBACK_ERROR",
+          "The onChange callback threw an exception.",
+          callbackError,
+        );
+      },
       "onChange",
     );
 
-    if (moduleRoot?.dispatchEvent) {
+    if (
+      moduleRoot?.dispatchEvent
+    ) {
       try {
-        const event = createCustomEvent(
-          documentRef,
-          "news-ticker-change",
-          payload,
-        );
+        const event =
+          createCustomEvent(
+            documentRef,
+            "news-ticker-change",
+            payload,
+          );
 
         if (event) {
-          moduleRoot.dispatchEvent(event);
+          moduleRoot.dispatchEvent(
+            event,
+          );
         }
       } catch (error) {
         reportError(
@@ -649,7 +884,7 @@ export function createNewsTickerModule(options = {}) {
   const emitVisibility = () => {
     const visible = Boolean(
       settings.enabled &&
-        settings.headline,
+      settings.headline,
     );
 
     const payload = Object.freeze({
@@ -733,7 +968,7 @@ export function createNewsTickerModule(options = {}) {
 
     const visuallyActive = Boolean(
       settings.enabled &&
-        hasContent,
+      hasContent,
     );
 
     setAttributeSafe(
@@ -753,13 +988,24 @@ export function createNewsTickerModule(options = {}) {
     );
 
     setAttributeSafe(
+      elements.primaryGroup,
+      "aria-hidden",
+      "false",
+    );
+
+    setAttributeSafe(
       elements.secondaryGroup,
       "aria-hidden",
       "true",
     );
 
-    // The outer #news-ticker host already carries aria-live="polite"
-    // in index.html. Avoid creating another nested live region.
+    /*
+     * The outer #news-ticker host already carries
+     * aria-live="polite" in index.html.
+     *
+     * The hidden status element is not used as a
+     * second live region to avoid duplicate announcements.
+     */
     setAttributeSafe(
       elements.status,
       "aria-live",
@@ -773,10 +1019,7 @@ export function createNewsTickerModule(options = {}) {
     );
 
     if (elements.status) {
-      elements.status.textContent =
-        visuallyActive
-          ? settings.headline
-          : "";
+      elements.status.textContent = "";
     }
   };
 
@@ -831,9 +1074,37 @@ export function createNewsTickerModule(options = {}) {
     updateAccessibility();
   };
 
-  const applyAnimationState = (
-    restart = false,
+  const setTrackAnimationName = (
+    direction,
   ) => {
+    if (!elements?.track) {
+      return;
+    }
+
+    /*
+     * The CSS contract uses the existing
+     * `news-ticker-marquee` keyframe.
+     *
+     * For RTL, the normal keyframe direction is used.
+     * For LTR, the same keyframe is reversed.
+     *
+     * The track's measured distance is always the
+     * width of one duplicated group, so the loop
+     * remains aligned in either direction.
+     */
+    try {
+      elements.track.style.animationDirection =
+        direction === "rtl"
+          ? "normal"
+          : "reverse";
+    } catch {
+      // Ignore unsupported animation controls.
+    }
+  };
+
+  const applyAnimationState = ({
+    restart = false,
+  } = {}) => {
     if (!elements?.track) {
       return;
     }
@@ -843,126 +1114,135 @@ export function createNewsTickerModule(options = {}) {
 
     const active = Boolean(
       settings.enabled &&
-        settings.headline &&
-        !pausedByApi &&
-        !reduced,
+      settings.headline &&
+      !pausedByApi &&
+      !reduced,
     );
 
     setAttributeSafe(
       elements.track,
-      "data-animation",
+      DATA_ATTRIBUTES.animation,
       active
         ? "running"
         : "paused",
     );
 
-    if (
-      hasElementClassList(elements.track)
-    ) {
-      if (active) {
-        elements.track.classList.add(
-          "news-ticker__track--animated",
-        );
-      } else {
-        elements.track.classList.remove(
-          "news-ticker__track--animated",
-        );
-      }
-    }
-
-    // The stylesheet owns the base keyframe animation.
-    // The module controls runtime playback and direction.
     try {
       elements.track.style.animationPlayState =
         active
           ? "running"
           : "paused";
 
-      elements.track.style.animationDirection =
-        settings.direction === "rtl"
-          ? "normal"
-          : "reverse";
+      setTrackAnimationName(
+        settings.direction,
+      );
     } catch {
       // Ignore unsupported inline animation controls.
     }
 
-    if (restart) {
-      animationSequence += 1;
+    if (!restart) {
+      return;
+    }
 
-      const sequence =
-        animationSequence;
+    animationSequence += 1;
 
-      try {
-        elements.track.style.animation =
-          "none";
+    const sequence =
+      animationSequence;
 
-        // Force the browser to observe the reset
-        // before restoring stylesheet animation.
-        void elements.track.offsetWidth;
-      } catch {
-        // Ignore non-visual DOM limitations.
-      }
+    if (animationRestartTimer) {
+      clearTimeout(
+        animationRestartTimer,
+      );
 
-      if (active) {
-        if (animationRestartTimer) {
-          clearTimeout(
-            animationRestartTimer,
-          );
+      animationRestartTimer = null;
+    }
+
+    /*
+     * Restart without permanently overriding
+     * stylesheet animation-name/duration rules.
+     */
+    try {
+      elements.track.style.animationPlayState =
+        "paused";
+
+      elements.track.style.animation =
+        "none";
+
+      void elements.track.offsetWidth;
+    } catch {
+      // Ignore non-visual DOM limitations.
+    }
+
+    animationRestartTimer =
+      setTimeout(() => {
+        animationRestartTimer = null;
+
+        if (
+          sequence !== animationSequence ||
+          lifecycle !== "ready" ||
+          !elements?.track
+        ) {
+          return;
         }
 
-        animationRestartTimer =
-          setTimeout(() => {
-            if (
-              sequence !== animationSequence ||
-              lifecycle !== "ready" ||
-              !elements?.track
-            ) {
-              return;
-            }
-
-            try {
-              elements.track.style.removeProperty(
-                "animation",
-              );
-
-              elements.track.style.animationPlayState =
-                active
-                  ? "running"
-                  : "paused";
-
-              elements.track.style.animationDirection =
-                settings.direction === "rtl"
-                  ? "normal"
-                  : "reverse";
-            } catch {
-              // Ignore.
-            }
-          }, 0);
-      } else {
         try {
           elements.track.style.removeProperty(
             "animation",
           );
 
-          elements.track.style.animationPlayState =
-            "paused";
+          setTrackAnimationName(
+            settings.direction,
+          );
 
-          elements.track.style.animationDirection =
-            settings.direction === "rtl"
-              ? "normal"
-              : "reverse";
+          elements.track.style.animationPlayState =
+            active
+              ? "running"
+              : "paused";
         } catch {
           // Ignore.
         }
-      }
+      }, ANIMATION.restartDelayMs);
+  };
+
+  const measureGroupWidth = (
+    group,
+  ) => {
+    if (!group) {
+      return 0;
     }
+
+    let width = 0;
+
+    try {
+      width = Math.max(
+        Number(
+          group.getBoundingClientRect?.()
+            ?.width,
+        ) || 0,
+
+        Number(
+          group.scrollWidth,
+        ) || 0,
+
+        Number(
+          group.offsetWidth,
+        ) || 0,
+      );
+    } catch {
+      width = Math.max(
+        Number(group.scrollWidth) || 0,
+        Number(group.offsetWidth) || 0,
+      );
+    }
+
+    return width;
   };
 
   const measureAndApplyMetrics = ({
     restartAnimation = true,
   } = {}) => {
     if (
-      !elements?.group ||
+      !elements?.primaryGroup ||
       !elements?.viewport ||
       !elements?.track
     ) {
@@ -970,62 +1250,72 @@ export function createNewsTickerModule(options = {}) {
       return 0;
     }
 
-    let groupWidth = 0;
+    const groupWidth = measureGroupWidth(
+      elements.primaryGroup,
+    );
+
+    const viewportWidth = Math.max(
+      Number(
+        elements.viewport
+          .getBoundingClientRect?.()
+          ?.width,
+      ) || 0,
+
+      Number(
+        elements.viewport.clientWidth,
+      ) || 0,
+
+      Number(
+        elements.viewport.offsetWidth,
+      ) || 0,
+    );
+
+    /*
+     * The duplicated group is separated by the
+     * CSS gap. The animation distance must include
+     * the first group's width and the inter-group
+     * gap so the second group takes its exact place.
+     */
+    let groupGap = 0;
 
     try {
-      groupWidth = Math.max(
-        Number(
-          elements.group
-            .getBoundingClientRect?.()
-            .width,
-        ) || 0,
+      const computedStyle =
+        windowRef?.getComputedStyle?.(
+          elements.track,
+        );
 
-        Number(
-          elements.group.scrollWidth,
-        ) || 0,
-      );
+      const rawGap =
+        computedStyle?.columnGap ||
+        computedStyle?.gap ||
+        "0";
+
+      const parsedGap =
+        Number.parseFloat(rawGap);
+
+      groupGap = Number.isFinite(parsedGap)
+        ? Math.max(0, parsedGap)
+        : 0;
     } catch {
-      groupWidth =
-        Number(
-          elements.group.scrollWidth,
-        ) || 0;
+      groupGap = 0;
     }
 
-    let viewportWidth = 0;
+    const contentDistance = Math.max(
+      ANIMATION.minTravelDistancePx,
+      groupWidth + groupGap,
+    );
 
-    try {
-      viewportWidth = Math.max(
-        Number(
-          elements.viewport
-            .getBoundingClientRect?.()
-            .width,
-        ) || 0,
+    /*
+     * If the group is narrower than the viewport,
+     * use at least the viewport width to prevent
+     * visible blank space during the loop.
+     */
+    const distance = Math.max(
+      contentDistance,
+      viewportWidth,
+      ANIMATION.minTravelDistancePx,
+    );
 
-        Number(
-          elements.viewport.clientWidth,
-        ) || 0,
-      );
-    } catch {
-      viewportWidth =
-        Number(
-          elements.viewport.clientWidth,
-        ) || 0;
-    }
-
-    const contentDistance =
-      Math.max(
-        groupWidth,
-        ANIMATION.minTravelDistancePx,
-      );
-
-    const distance =
-      Math.max(
-        contentDistance,
-        viewportWidth,
-      );
-
-    currentDistancePx =
-      distance;
+    currentDistancePx = distance;
 
     const duration =
       getAnimationDurationSeconds(
@@ -1048,14 +1338,13 @@ export function createNewsTickerModule(options = {}) {
     setAttributeSafe(
       elements.track,
       DATA_ATTRIBUTES.direction,
-      readTextDirection(
-        moduleRoot,
-        settings.direction,
-      ),
+      settings.direction,
     );
 
     if (restartAnimation) {
-      applyAnimationState(true);
+      applyAnimationState({
+        restart: true,
+      });
     }
 
     return distance;
@@ -1115,10 +1404,7 @@ export function createNewsTickerModule(options = {}) {
     mediaQueryListener = null;
 
     if (resizeTimer) {
-      clearTimeout(
-        resizeTimer,
-      );
-
+      clearTimeout(resizeTimer);
       resizeTimer = null;
     }
 
@@ -1137,9 +1423,7 @@ export function createNewsTickerModule(options = {}) {
     }
 
     if (resizeTimer) {
-      clearTimeout(
-        resizeTimer,
-      );
+      clearTimeout(resizeTimer);
     }
 
     resizeTimer =
@@ -1184,9 +1468,9 @@ export function createNewsTickerModule(options = {}) {
           );
         }
 
-        if (elements?.group) {
+        if (elements?.primaryGroup) {
           resizeObserver.observe(
-            elements.group,
+            elements.primaryGroup,
           );
         }
       } catch (error) {
@@ -1204,8 +1488,7 @@ export function createNewsTickerModule(options = {}) {
       !resizeObserver &&
       windowRef.addEventListener
     ) {
-      resizeListener =
-        scheduleRefresh;
+      resizeListener = scheduleRefresh;
 
       windowRef.addEventListener(
         "resize",
@@ -1232,7 +1515,11 @@ export function createNewsTickerModule(options = {}) {
         }
 
         updateAccessibility();
-        applyAnimationState(true);
+
+        applyAnimationState({
+          restart: true,
+        });
+
         emitChange(
           SOURCE_VALUES.refresh,
         );
@@ -1268,6 +1555,38 @@ export function createNewsTickerModule(options = {}) {
     }
   };
 
+  const snapshotRoot = () => {
+    if (!moduleRoot) {
+      return;
+    }
+
+    originalChildNodes = Array.from(
+      moduleRoot.childNodes ?? [],
+    );
+
+    originalRootClassName =
+      moduleRoot.getAttribute?.(
+        "class",
+      ) ?? null;
+
+    originalRootAttributes =
+      getAttributeSnapshot(
+        moduleRoot,
+        [
+          "aria-hidden",
+          DATA_ATTRIBUTES.position,
+          DATA_ATTRIBUTES.direction,
+          DATA_ATTRIBUTES.enabled,
+          DATA_ATTRIBUTES.error,
+        ],
+      );
+
+    originalRootInlineStyle =
+      getElementInlineStyleSnapshot(
+        moduleRoot,
+      );
+  };
+
   const buildDom = () => {
     if (
       !documentRef?.createElement ||
@@ -1281,50 +1600,7 @@ export function createNewsTickerModule(options = {}) {
       return false;
     }
 
-    const rootClassAlreadyPresent =
-      moduleRoot.classList?.contains?.(
-        CLASS_NAMES.root,
-      );
-
-    previousRootInlineStyles = {
-      cssText:
-        moduleRoot.getAttribute?.(
-          "style",
-        ) ?? null,
-
-      ariaHidden:
-        moduleRoot.getAttribute?.(
-          "aria-hidden",
-        ) ?? null,
-
-      tickerPosition:
-        moduleRoot.getAttribute?.(
-          DATA_ATTRIBUTES.position,
-        ) ?? null,
-
-      tickerDirection:
-        moduleRoot.getAttribute?.(
-          DATA_ATTRIBUTES.direction,
-        ) ?? null,
-
-      tickerEnabled:
-        moduleRoot.getAttribute?.(
-          DATA_ATTRIBUTES.enabled,
-        ) ?? null,
-    };
-
-    // The host is module-owned. Rebuilding only removes
-    // ticker markup inside the host element.
-    removeAllChildren(
-      moduleRoot,
-    );
-
-    moduleRoot.classList?.add?.(
-      CLASS_NAMES.root,
-    );
-
-    ownsMarkup =
-      !rootClassAlreadyPresent;
+    snapshotRoot();
 
     const label = createElement(
       documentRef,
@@ -1396,11 +1672,17 @@ export function createNewsTickerModule(options = {}) {
         "The news ticker DOM structure could not be constructed.",
       );
 
-      removeAllChildren(
-        moduleRoot,
-      );
-
       return false;
+    }
+
+    /*
+     * Only replace the host's children after all
+     * required ticker nodes have been constructed.
+     */
+    while (moduleRoot.firstChild) {
+      moduleRoot.removeChild(
+        moduleRoot.firstChild,
+      );
     }
 
     labelDot.setAttribute(
@@ -1408,9 +1690,7 @@ export function createNewsTickerModule(options = {}) {
       "true",
     );
 
-    label.appendChild(
-      labelDot,
-    );
+    label.appendChild(labelDot);
 
     primaryGroup.appendChild(
       primaryItem,
@@ -1428,32 +1708,21 @@ export function createNewsTickerModule(options = {}) {
       secondaryGroup,
     );
 
-    viewport.appendChild(
-      track,
-    );
+    viewport.appendChild(track);
 
     status.hidden = true;
-
-    status.setAttribute(
-      "role",
-      "status",
-    );
-
+    status.setAttribute("role", "status");
     status.setAttribute(
       "aria-hidden",
       "true",
     );
 
-    moduleRoot.appendChild(
-      label,
-    );
+    moduleRoot.appendChild(label);
+    moduleRoot.appendChild(viewport);
+    moduleRoot.appendChild(status);
 
-    moduleRoot.appendChild(
-      viewport,
-    );
-
-    moduleRoot.appendChild(
-      status,
+    moduleRoot.classList?.add?.(
+      CLASS_NAMES.root,
     );
 
     elements = Object.freeze({
@@ -1476,78 +1745,57 @@ export function createNewsTickerModule(options = {}) {
       return;
     }
 
-    removeAllChildren(
-      moduleRoot,
-    );
-
-    if (previousRootInlineStyles) {
-      if (
-        previousRootInlineStyles.cssText === null ||
-        previousRootInlineStyles.cssText === ""
-      ) {
-        try {
-          moduleRoot.removeAttribute(
-            "style",
-          );
-        } catch {
-          // Ignore.
-        }
-      } else {
-        moduleRoot.setAttribute(
-          "style",
-          previousRootInlineStyles.cssText,
-        );
-      }
-
-      const restoreAttribute =
-        (
-          name,
-          value,
-        ) => {
-          if (
-            value === null ||
-            value === undefined
-          ) {
-            try {
-              moduleRoot.removeAttribute(
-                name,
-              );
-            } catch {
-              // Ignore.
-            }
-          } else {
-            setAttributeSafe(
-              moduleRoot,
-              name,
-              value,
-            );
-          }
-        };
-
-      restoreAttribute(
-        "aria-hidden",
-        previousRootInlineStyles.ariaHidden,
-      );
-
-      restoreAttribute(
-        DATA_ATTRIBUTES.position,
-        previousRootInlineStyles.tickerPosition,
-      );
-
-      restoreAttribute(
-        DATA_ATTRIBUTES.direction,
-        previousRootInlineStyles.tickerDirection,
-      );
-
-      restoreAttribute(
-        DATA_ATTRIBUTES.enabled,
-        previousRootInlineStyles.tickerEnabled,
+    while (moduleRoot.firstChild) {
+      moduleRoot.removeChild(
+        moduleRoot.firstChild,
       );
     }
 
-    Object.values(
-      CSS_VARS,
-    ).forEach(
+    if (
+      originalChildNodes &&
+      originalChildNodes.length > 0
+    ) {
+      originalChildNodes.forEach(
+        (child) => {
+          try {
+            moduleRoot.appendChild(child);
+          } catch {
+            // Ignore individual node restoration failures.
+          }
+        },
+      );
+    }
+
+    if (
+      originalRootClassName === null ||
+      originalRootClassName === undefined
+    ) {
+      try {
+        moduleRoot.removeAttribute(
+          "class",
+        );
+      } catch {
+        // Ignore.
+      }
+    } else {
+      setAttributeSafe(
+        moduleRoot,
+        "class",
+        originalRootClassName,
+      );
+    }
+
+    restoreAttributes(
+      moduleRoot,
+      originalRootAttributes,
+    );
+
+    restoreInlineStyle(
+      moduleRoot,
+      originalRootInlineStyle,
+    );
+
+    Object.values(CSS_VARS).forEach(
       (property) => {
         removeStylePropertySafe(
           moduleRoot.style,
@@ -1556,18 +1804,15 @@ export function createNewsTickerModule(options = {}) {
       },
     );
 
-    try {
-      moduleRoot.classList.remove(
-        CLASS_NAMES.root,
-      );
-    } catch {
-      // Ignore.
-    }
-
     elements = null;
     moduleRoot = null;
-    previousRootInlineStyles = null;
-    ownsMarkup = false;
+
+    originalChildNodes = null;
+    originalRootClassName = null;
+    originalRootAttributes = null;
+    originalRootInlineStyle = null;
+
+    currentDistancePx = 0;
   };
 
   const assertUsable = (
@@ -1591,28 +1836,24 @@ export function createNewsTickerModule(options = {}) {
     emit = true,
   ) => {
     if (
-      !assertUsable(
-        "setSettings",
-      )
+      !assertUsable("setSettings")
     ) {
-      return cloneSettings(
-        settings,
-      );
+      return cloneSettings(settings);
     }
 
-    const incoming =
-      isObject(nextSettings)
-        ? nextSettings
-        : {};
+    const incoming = isObject(
+      nextSettings,
+    )
+      ? nextSettings
+      : {};
 
-    const normalized =
-      normalizeSettings(
-        incoming,
-        {
-          previous: settings,
-          documentRef,
-        },
-      );
+    const normalized = normalizeSettings(
+      incoming,
+      {
+        previous: settings,
+        documentRef,
+      },
+    );
 
     const changedKeys =
       SETTING_KEYS.filter(
@@ -1624,19 +1865,11 @@ export function createNewsTickerModule(options = {}) {
     const hadVisibilityChange =
       normalized.enabled !==
         settings.enabled ||
-      Boolean(
-        normalized.headline,
-      ) !==
-        Boolean(
-          settings.headline,
-        );
+      Boolean(normalized.headline) !==
+        Boolean(settings.headline);
 
-    if (
-      changedKeys.length === 0
-    ) {
-      return cloneSettings(
-        settings,
-      );
+    if (changedKeys.length === 0) {
+      return cloneSettings(settings);
     }
 
     clearError();
@@ -1651,27 +1884,29 @@ export function createNewsTickerModule(options = {}) {
       updateVisibleContent();
 
       const metricsChanged =
-        changedKeys.some(
-          (key) =>
-            [
-              "headline",
-              "direction",
-              "speed",
-              "fontSize",
-              "bold",
-            ].includes(key),
+        changedKeys.some((key) =>
+          [
+            "headline",
+            "direction",
+            "speed",
+            "fontSize",
+            "bold",
+          ].includes(key),
         );
 
+      const shouldRestart =
+        metricsChanged ||
+        hadVisibilityChange;
+
       measureAndApplyMetrics({
-        restartAnimation:
-          metricsChanged ||
-          hadVisibilityChange,
+        restartAnimation: shouldRestart,
       });
 
-      applyAnimationState(
-        metricsChanged ||
-          hadVisibilityChange,
-      );
+      if (!shouldRestart) {
+        applyAnimationState({
+          restart: false,
+        });
+      }
     }
 
     if (hadVisibilityChange) {
@@ -1679,14 +1914,10 @@ export function createNewsTickerModule(options = {}) {
     }
 
     if (emit) {
-      emitChange(
-        source,
-      );
+      emitChange(source);
     }
 
-    return cloneSettings(
-      settings,
-    );
+    return cloneSettings(settings);
   };
 
   const api = {
@@ -1725,13 +1956,13 @@ export function createNewsTickerModule(options = {}) {
       }
 
       moduleRoot = root;
-
       lifecycle = "initializing";
       pausedByApi = false;
 
       try {
         if (!buildDom()) {
           lifecycle = "error";
+          restoreRoot();
           return false;
         }
 
@@ -1742,11 +1973,18 @@ export function createNewsTickerModule(options = {}) {
           restartAnimation: false,
         });
 
-        applyAnimationState(true);
+        /*
+         * Set ready before starting the restart timer.
+         * This prevents the initial animation callback
+         * from being rejected by lifecycle checks.
+         */
+        lifecycle = "ready";
+
+        applyAnimationState({
+          restart: true,
+        });
 
         installObservers();
-
-        lifecycle = "ready";
         clearError();
 
         if (!readyNotified) {
@@ -1755,12 +1993,10 @@ export function createNewsTickerModule(options = {}) {
           safeInvoke(
             callbacks.onReady,
             Object.freeze({
-              settings:
-                cloneSettings(
-                  settings,
-                ),
-              state:
-                getSerializableState(),
+              settings: cloneSettings(
+                settings,
+              ),
+              state: getSerializableState(),
             }),
             NOOP,
             "onReady",
@@ -1791,9 +2027,7 @@ export function createNewsTickerModule(options = {}) {
     },
 
     getSettings() {
-      return cloneSettings(
-        settings,
-      );
+      return cloneSettings(settings);
     },
 
     getState() {
@@ -1802,32 +2036,16 @@ export function createNewsTickerModule(options = {}) {
 
     getRenderModel() {
       return {
-        enabled:
-          settings.enabled,
-
-        text:
-          settings.headline,
-
-        position:
-          settings.position,
-
-        direction:
-          settings.direction,
-
-        speed:
-          settings.speed,
-
-        fontSize:
-          settings.fontSize,
-
-        textColor:
-          settings.textColor,
-
+        enabled: settings.enabled,
+        text: settings.headline,
+        position: settings.position,
+        direction: settings.direction,
+        speed: settings.speed,
+        fontSize: settings.fontSize,
+        textColor: settings.textColor,
         backgroundColor:
           settings.backgroundColor,
-
-        bold:
-          settings.bold,
+        bold: settings.bold,
       };
     },
 
@@ -1855,18 +2073,14 @@ export function createNewsTickerModule(options = {}) {
       options = {},
     ) {
       if (
-        !SETTING_KEYS.includes(
-          key,
-        )
+        !SETTING_KEYS.includes(key)
       ) {
         reportError(
           "INVALID_SETTING",
           `Unknown ticker setting: ${String(key)}.`,
         );
 
-        return cloneSettings(
-          settings,
-        );
+        return cloneSettings(settings);
       }
 
       return setSettingsInternal(
@@ -1955,16 +2169,13 @@ export function createNewsTickerModule(options = {}) {
       colors,
       options = {},
     ) {
-      const source =
-        isObject(colors)
-          ? colors
-          : {};
+      const source = isObject(colors)
+        ? colors
+        : {};
 
       return setSettingsInternal(
         {
-          textColor:
-            source.textColor,
-
+          textColor: source.textColor,
           backgroundColor:
             source.backgroundColor,
         },
@@ -1988,16 +2199,12 @@ export function createNewsTickerModule(options = {}) {
 
     pause() {
       if (
-        !assertUsable(
-          "pause",
-        )
+        !assertUsable("pause")
       ) {
         return false;
       }
 
-      if (
-        lifecycle !== "ready"
-      ) {
+      if (lifecycle !== "ready") {
         return false;
       }
 
@@ -2007,9 +2214,9 @@ export function createNewsTickerModule(options = {}) {
 
       pausedByApi = true;
 
-      applyAnimationState(
-        false,
-      );
+      applyAnimationState({
+        restart: false,
+      });
 
       emitChange(
         SOURCE_VALUES.api,
@@ -2020,16 +2227,12 @@ export function createNewsTickerModule(options = {}) {
 
     resume() {
       if (
-        !assertUsable(
-          "resume",
-        )
+        !assertUsable("resume")
       ) {
         return false;
       }
 
-      if (
-        lifecycle !== "ready"
-      ) {
+      if (lifecycle !== "ready") {
         return false;
       }
 
@@ -2039,9 +2242,9 @@ export function createNewsTickerModule(options = {}) {
 
       pausedByApi = false;
 
-      applyAnimationState(
-        true,
-      );
+      applyAnimationState({
+        restart: false,
+      });
 
       emitChange(
         SOURCE_VALUES.api,
@@ -2052,16 +2255,12 @@ export function createNewsTickerModule(options = {}) {
 
     refresh() {
       if (
-        !assertUsable(
-          "refresh",
-        )
+        !assertUsable("refresh")
       ) {
         return false;
       }
 
-      if (
-        lifecycle !== "ready"
-      ) {
+      if (lifecycle !== "ready") {
         return false;
       }
 
@@ -2073,10 +2272,6 @@ export function createNewsTickerModule(options = {}) {
       measureAndApplyMetrics({
         restartAnimation: true,
       });
-
-      applyAnimationState(
-        true,
-      );
 
       emitChange(
         SOURCE_VALUES.refresh,
