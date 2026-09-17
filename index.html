@@ -2,234 +2,89 @@
 <html lang="hi">
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   <meta
     name="description"
-    content="Swar Srijan Studio — फोटो या वीडियो से 9:16 शॉर्ट वीडियो, सुविचार, कस्टम टेक्स्ट, मल्टी-कलर टेक्स्ट, ब्राउज़र TTS, न्यूज़ टिकर और वीडियो रिकॉर्डिंग के लिए एक-पेज browser-based studio."
+    content="Swar Srijan Studio — एक-पेज browser-based studio for 9:16 video, text, TTS, news ticker and recording."
   >
-
   <meta
     name="keywords"
-    content="Swar Srijan Studio, Hindi Shorts, Reels Maker, Sanskrit, Vedic Sanskrit, TTS, Canvas Video, News Ticker, Video Recording, PWA"
+    content="Swar Srijan Studio, Hindi Shorts, Reels Maker, Sanskrit, TTS, News Ticker, Canvas Video, PWA"
   >
 
   <meta name="theme-color" content="#111827">
   <meta name="color-scheme" content="light dark">
-
-  <meta
-    name="mobile-web-app-capable"
-    content="yes"
-  >
-
-  <meta
-    name="application-name"
-    content="Swar Srijan Studio"
-  >
-
-  <meta
-    name="apple-mobile-web-app-capable"
-    content="yes"
-  >
-
-  <meta
-    name="apple-mobile-web-app-status-bar-style"
-    content="black-translucent"
-  >
-
-  <meta
-    name="apple-mobile-web-app-title"
-    content="Swar Srijan Studio"
-  >
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Swar Srijan Studio">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Swar Srijan Studio">
 
   <title>Swar Srijan Studio</title>
 
-  <!-- ============================================================
-       PWA
-       ============================================================ -->
-  <link
-    rel="manifest"
-    href="./manifest.json"
-  >
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./styles/news-ticker.css">
 
-  <!-- ============================================================
-       APP STYLES
-       ============================================================ -->
-  <link
-    rel="stylesheet"
-    href="./style.css"
-  >
-
-  <link
-    rel="stylesheet"
-    href="./styles/news-ticker.css"
-  >
-
-  <!-- ============================================================
-       APP SCRIPT
-       ============================================================ -->
-  <script
-    type="module"
-    src="./script.js"
-  ></script>
+  <script type="module" src="./script.js"></script>
 </head>
 
 <body class="app-shell">
 
-  <a
-    class="skip-link"
-    href="#main-content"
-  >
-    मुख्य सामग्री पर जाएँ
-  </a>
+  <a class="skip-link" href="#main-content">मुख्य सामग्री पर जाएँ</a>
 
-
-  <!-- ============================================================
-       APP HEADER
-       ============================================================ -->
-  <header
-    class="app-header"
-    data-module="app-header"
-    aria-labelledby="app-title"
-  >
-
+  <header class="app-header">
     <div class="app-header__inner">
-
       <div class="app-header__brand">
-
-        <p class="app-header__eyebrow">
-          Browser-based Creator Studio
-        </p>
-
-        <h1
-          id="app-title"
-          class="app-header__title"
-        >
-          Swar Srijan Studio
-        </h1>
-
+        <p class="app-header__eyebrow">Browser-based Creator Studio</p>
+        <h1 id="app-title" class="app-header__title">Swar Srijan Studio</h1>
         <p class="app-header__subtitle">
-          एक ही पेज पर 9:16 Live Video, Text, TTS, News Ticker और Recording
+          9:16 Live Video · Text · TTS · News Ticker · Recording
         </p>
-
       </div>
 
-
       <div class="app-header__meta">
-
-        <p
-          id="app-browser-status"
-          class="app-status-chip"
-          role="status"
-          aria-live="polite"
-        >
+        <p id="app-browser-status" class="app-status-chip" role="status" aria-live="polite">
           ब्राउज़र-आधारित स्टूडियो
         </p>
 
         <div
           class="app-header__tools"
           data-ui-slot="theme-settings"
-          aria-label="थीम और सेटिंग्स नियंत्रण क्षेत्र"
-        >
-
-          <span class="app-header__tools-label">
-            थीम/सेटिंग्स
-          </span>
-
-        </div>
-
+          aria-label="थीम और सेटिंग्स"
+        ></div>
       </div>
-
     </div>
-
   </header>
 
-
-  <!-- ============================================================
-       MAIN APPLICATION
-       ============================================================ -->
-  <main
-    id="main-content"
-    class="app-main"
-    data-app="swar-srijan-studio"
-  >
-
-    <div class="app-layout app-layout--single-page">
-
-
-      <!-- ========================================================
-           PRIMARY SINGLE PAGE CONTENT
-           ======================================================== -->
+  <main id="main-content" class="app-main" data-app="swar-srijan-studio">
+    <div class="app-layout">
       <div class="app-layout__primary">
 
+        <form id="studio-form" class="studio-form" autocomplete="off" novalidate>
 
-        <form
-          id="studio-form"
-          class="studio-form"
-          autocomplete="off"
-          novalidate
-          data-form="studio"
-        >
-
-
-          <!-- ======================================================
-               01. LIVE PREVIEW / VIDEO SCREEN
-               ====================================================== -->
+          <!-- LIVE PREVIEW -->
           <section
             id="preview-section"
-            class="studio-section studio-section--preview studio-section--live"
+            class="studio-section studio-section--preview"
             data-module="canvas-renderer"
             aria-labelledby="preview-section-title"
           >
-
             <header class="studio-section__header">
-
               <div>
-
-                <p class="studio-section__eyebrow">
-                  LIVE · 9:16
-                </p>
-
-                <h2
-                  id="preview-section-title"
-                  class="studio-section__title"
-                >
-                  Live Video Screen
+                <p class="studio-section__eyebrow">LIVE · 9:16</p>
+                <h2 id="preview-section-title" class="studio-section__title">
+                  Live Video Preview
                 </h2>
-
-                <p class="studio-section__description">
-                  यही मुख्य final composition screen है। चयनित फोटो/वीडियो,
-                  सुविचार, कस्टम टेक्स्ट और न्यूज़ टिकर इसी canvas पर render होंगे।
-                </p>
-
               </div>
-
             </header>
 
-
             <div class="studio-section__body">
-
-
               <div
                 id="preview-stage"
-                class="preview-stage preview-stage--live"
+                class="preview-stage"
                 data-preview-ratio="9:16"
-                data-live-preview="true"
-                aria-label="लाइव 9:16 वीडियो preview"
               >
-
-                <div
-                  class="preview-stage__live-indicator"
-                  aria-hidden="true"
-                >
-                  LIVE PREVIEW
-                </div>
-
-
                 <canvas
                   id="preview-canvas"
                   class="preview-canvas"
@@ -237,60 +92,28 @@
                   height="1920"
                   role="img"
                   aria-describedby="preview-canvas-fallback"
-                  data-canvas-width="1080"
-                  data-canvas-height="1920"
                 >
-                  9:16 canvas preview इस browser में उपलब्ध नहीं है।
+                  9:16 preview उपलब्ध नहीं है।
                 </canvas>
 
-
-                <p
-                  id="preview-canvas-fallback"
-                  class="visually-hidden"
-                >
-                  यदि canvas preview उपलब्ध न हो, तो status क्षेत्र में
-                  rendering स्थिति और त्रुटि की जानकारी दी जाएगी।
+                <p id="preview-canvas-fallback" class="visually-hidden">
+                  Canvas preview उपलब्ध नहीं है।
                 </p>
 
-
-                <div
-                  id="preview-empty-state"
-                  class="preview-empty-state"
-                  aria-live="polite"
-                >
-
-                  <p class="preview-empty-state__title">
-                    Live Preview तैयार है
-                  </p>
-
+                <div id="preview-empty-state" class="preview-empty-state" aria-live="polite">
+                  <p class="preview-empty-state__title">Live Preview</p>
                   <p class="preview-empty-state__text">
-                    फोटो या वीडियो चुनें। उसके बाद Text, TTS और Ticker
-                    इसी स्क्रीन पर दिखाई देंगे।
+                    फोटो या वीडियो चुनकर composition शुरू करें।
                   </p>
-
                 </div>
-
               </div>
 
-
-              <!-- Live preview status -->
               <div class="preview-toolbar">
-
-                <p
-                  id="preview-status"
-                  class="status-text"
-                  role="status"
-                  aria-live="polite"
-                >
-                  Live Preview प्रतीक्षारत है।
+                <p id="preview-status" class="status-text" role="status" aria-live="polite">
+                  Preview प्रतीक्षारत है।
                 </p>
 
-
-                <div
-                  class="button-row"
-                  aria-label="Live Preview controls"
-                >
-
+                <div class="button-row">
                   <button
                     id="preview-play-button"
                     class="button button--primary"
@@ -299,9 +122,8 @@
                     data-action="toggle-preview"
                     disabled
                   >
-                    Live Preview चलाएँ
+                    Preview चलाएँ
                   </button>
-
 
                   <button
                     id="preview-reset-button"
@@ -311,63 +133,32 @@
                     data-action="reset-preview"
                     disabled
                   >
-                    Preview रीसेट करें
+                    Reset
                   </button>
-
                 </div>
-
               </div>
-
             </div>
-
           </section>
 
-
-          <!-- ======================================================
-               02. MEDIA
-               ====================================================== -->
+          <!-- MEDIA -->
           <section
             id="media-section"
             class="studio-section"
             data-module="media"
             aria-labelledby="media-section-title"
           >
-
             <header class="studio-section__header">
-
               <div>
-
-                <p class="studio-section__eyebrow">
-                  01 · Media
-                </p>
-
-                <h2
-                  id="media-section-title"
-                  class="studio-section__title"
-                >
+                <p class="studio-section__eyebrow">01 · Media</p>
+                <h2 id="media-section-title" class="studio-section__title">
                   फोटो या वीडियो
                 </h2>
-
-                <p class="studio-section__description">
-                  Live 9:16 screen के लिए स्थानीय फोटो या वीडियो चुनें।
-                </p>
-
               </div>
-
             </header>
 
-
             <div class="studio-section__body">
-
               <div class="form-field">
-
-                <label
-                  for="media-file-input"
-                  class="form-label"
-                >
-                  मीडिया फ़ाइल
-                </label>
-
+                <label for="media-file-input" class="form-label">मीडिया फ़ाइल</label>
                 <input
                   id="media-file-input"
                   name="mediaFile"
@@ -376,113 +167,49 @@
                   accept="image/*,video/*"
                   data-module="media"
                   data-action="select-file"
-                  aria-describedby="media-upload-help media-file-info"
                 >
-
-                <p
-                  id="media-upload-help"
-                  class="form-help"
-                >
-                  JPG, PNG, WebP या browser-supported video फ़ाइल चुनें।
-                  Processing browser में ही होगी।
-                </p>
-
               </div>
 
+              <div class="media-file-summary" aria-live="polite">
+                <p class="media-file-summary__name">
+                  <span class="media-file-summary__label">चयनित:</span>
+                  <span id="media-file-name">कोई फ़ाइल चयनित नहीं</span>
+                </p>
+                <p id="media-file-info" class="media-file-summary__info"></p>
+              </div>
 
               <div
-                class="media-file-summary"
-                aria-live="polite"
+                id="media-preview"
+                class="media-preview"
+                data-media-preview="container"
               >
-
-                <p class="media-file-summary__name">
-
-                  <span class="media-file-summary__label">
-                    चयनित फ़ाइल:
-                  </span>
-
-                  <span id="media-file-name">
-                    कोई फ़ाइल चयनित नहीं
-                  </span>
-
-                </p>
-
-
-                <p
-                  id="media-file-info"
-                  class="media-file-summary__info"
-                  role="status"
-                  aria-live="polite"
-                >
-                  मीडिया विवरण चयन के बाद यहाँ दिखाई देगा।
-                </p>
-
-              </div>
-
-
-              <!-- Source media -->
-              <div class="media-preview-card">
-
-                <div
-                  id="media-preview"
-                  class="media-preview"
-                  data-media-preview="container"
-                  aria-label="चयनित source media का preview"
-                >
-
-                  <div
-                    id="media-empty-state"
-                    class="media-empty-state"
-                  >
-
-                    <p class="media-empty-state__title">
-                      अभी कोई मीडिया चयनित नहीं है
-                    </p>
-
-                    <p class="media-empty-state__text">
-                      ऊपर से फोटो या वीडियो चुनें।
-                    </p>
-
-                  </div>
-
-
-                  <img
-                    id="media-image-preview"
-                    class="media-preview__image"
-                    src=""
-                    alt="चयनित फोटो का पूर्वावलोकन"
-                    hidden
-                  >
-
-
-                  <video
-                    id="media-video-preview"
-                    class="media-preview__video"
-                    controls
-                    playsinline
-                    preload="metadata"
-                    aria-label="चयनित वीडियो का पूर्वावलोकन"
-                    hidden
-                  >
-                    इस browser में वीडियो preview उपलब्ध नहीं है।
-                  </video>
-
+                <div id="media-empty-state" class="media-empty-state">
+                  <p class="media-empty-state__title">कोई मीडिया नहीं</p>
                 </div>
 
+                <img
+                  id="media-image-preview"
+                  class="media-preview__image"
+                  src=""
+                  alt="चयनित फोटो"
+                  hidden
+                >
+
+                <video
+                  id="media-video-preview"
+                  class="media-preview__video"
+                  controls
+                  playsinline
+                  preload="metadata"
+                  hidden
+                >
+                  वीडियो preview उपलब्ध नहीं है।
+                </video>
               </div>
 
-
               <div class="form-grid form-grid--two">
-
                 <div class="form-field">
-
-                  <label
-                    for="media-fit-mode"
-                    class="form-label"
-                  >
-                    मीडिया फिट मोड
-                  </label>
-
+                  <label for="media-fit-mode" class="form-label">Fit mode</label>
                   <select
                     id="media-fit-mode"
                     name="mediaFitMode"
@@ -490,33 +217,14 @@
                     data-module="media"
                     data-setting="fitMode"
                   >
-
-                    <option value="cover">
-                      Cover — पूरा फ्रेम भरें
-                    </option>
-
-                    <option value="contain">
-                      Contain — पूरा मीडिया दिखाएँ
-                    </option>
-
-                    <option value="stretch">
-                      Stretch — फ्रेम के अनुसार खींचें
-                    </option>
-
+                    <option value="cover">Cover</option>
+                    <option value="contain">Contain</option>
+                    <option value="stretch">Stretch</option>
                   </select>
-
                 </div>
 
-
                 <div class="form-field form-field--actions">
-
-                  <span
-                    class="form-label"
-                    aria-hidden="true"
-                  >
-                    फ़ाइल नियंत्रण
-                  </span>
-
+                  <span class="form-label" aria-hidden="true">फ़ाइल</span>
                   <button
                     id="media-remove-button"
                     class="button button--secondary"
@@ -527,87 +235,45 @@
                   >
                     मीडिया हटाएँ
                   </button>
-
                 </div>
-
               </div>
-
             </div>
-
           </section>
 
-
-          <!-- ======================================================
-               03. TEXT BOX / SUVICHAR
-               ====================================================== -->
+          <!-- TEXT -->
           <section
             id="quote-section"
             class="studio-section"
             data-module="quote"
             aria-labelledby="quote-section-title"
           >
-
             <header class="studio-section__header">
-
               <div>
-
-                <p class="studio-section__eyebrow">
-                  02 · Text Box
-                </p>
-
-                <h2
-                  id="quote-section-title"
-                  class="studio-section__title"
-                >
-                  सुविचार और कस्टम टेक्स्ट
+                <p class="studio-section__eyebrow">02 · Text</p>
+                <h2 id="quote-section-title" class="studio-section__title">
+                  Text Box / सुविचार
                 </h2>
-
-                <p class="studio-section__description">
-                  यह Text Box सीधे Live Video Screen की composition में उपयोग होगा।
-                </p>
-
               </div>
-
             </header>
 
-
             <div class="studio-section__body">
-
-
               <div class="form-field">
-
-                <label
-                  for="quote-text"
-                  class="form-label"
-                >
-                  सुविचार / कस्टम Text Box
+                <label for="quote-text" class="form-label">
+                  सुविचार / कस्टम टेक्स्ट
                 </label>
-
                 <textarea
                   id="quote-text"
                   name="quoteText"
                   class="form-control form-control--textarea"
-                  rows="7"
+                  rows="6"
                   maxlength="2000"
-                  placeholder="अपना सुविचार, श्लोक, संस्कृत पाठ या कोई भी कस्टम टेक्स्ट यहाँ लिखें।"
+                  placeholder="अपना सुविचार या पाठ यहाँ लिखें।"
                   data-module="quote"
                   data-setting="text"
-                  aria-describedby="quote-text-help"
                 ></textarea>
-
-                <p
-                  id="quote-text-help"
-                  class="form-help"
-                >
-                  Text में line wrapping और final positioning canvas renderer
-                  के अनुसार होगा।
-                </p>
-
               </div>
 
-
               <div class="button-row">
-
                 <button
                   id="quote-sample-button"
                   class="button button--secondary"
@@ -615,9 +281,8 @@
                   data-module="quote"
                   data-action="insert-sample"
                 >
-                  नमूना सुविचार डालें
+                  नमूना डालें
                 </button>
-
 
                 <button
                   id="quote-clear-button"
@@ -626,546 +291,232 @@
                   data-module="quote"
                   data-action="clear"
                 >
-                  Text साफ़ करें
+                  साफ़ करें
                 </button>
-
               </div>
 
-
-              <fieldset class="control-group">
-
-                <legend class="control-group__legend">
-                  भाषा और फ़ॉन्ट
-                </legend>
-
-
-                <div class="form-grid form-grid--two">
-
-                  <div class="form-field">
-
-                    <label
-                      for="quote-language"
-                      class="form-label"
-                    >
-                      भाषा
-                    </label>
-
-                    <select
-                      id="quote-language"
-                      name="quoteLanguage"
-                      class="form-control"
-                      data-module="quote"
-                      data-setting="language"
-                    >
-
-                      <option value="hi">
-                        हिंदी
-                      </option>
-
-                      <option value="sa">
-                        संस्कृत
-                      </option>
-
-                      <option value="sa-vedic">
-                        वैदिक संस्कृत
-                      </option>
-
-                      <option value="other">
-                        अन्य
-                      </option>
-
-                    </select>
-
-                  </div>
-
-
-                  <div class="form-field">
-
-                    <label
-                      for="quote-font-family"
-                      class="form-label"
-                    >
-                      फ़ॉन्ट
-                    </label>
-
-                    <select
-                      id="quote-font-family"
-                      name="quoteFontFamily"
-                      class="form-control"
-                      data-module="quote"
-                      data-setting="fontFamily"
-                    >
-
-                      <option value="system">
-                        System / Browser Font
-                      </option>
-
-                      <option value="serif">
-                        Serif System Font
-                      </option>
-
-                      <option value="sans-serif">
-                        Sans-serif System Font
-                      </option>
-
-                      <option value="monospace">
-                        Monospace System Font
-                      </option>
-
-                    </select>
-
-                  </div>
-
-                </div>
-
-              </fieldset>
-
-
-              <fieldset class="control-group">
-
-                <legend class="control-group__legend">
-                  Text Layout
-                </legend>
-
-
-                <div class="form-grid form-grid--two">
-
-                  <div class="form-field">
-
-                    <label
-                      for="quote-font-size"
-                      class="form-label"
-                    >
-                      फ़ॉन्ट आकार
-                    </label>
-
-                    <div class="range-control">
-
-                      <input
-                        id="quote-font-size"
-                        name="quoteFontSize"
-                        class="form-range"
-                        type="range"
-                        min="24"
-                        max="160"
-                        step="2"
-                        value="64"
-                        data-module="quote"
-                        data-setting="fontSize"
-                        aria-describedby="quote-font-size-output"
-                      >
-
-                      <output
-                        id="quote-font-size-output"
-                        class="range-output"
-                        for="quote-font-size"
-                      >
-                        64 px
-                      </output>
-
-                    </div>
-
-                  </div>
-
-
-                  <div class="form-field">
-
-                    <label
-                      for="quote-line-height"
-                      class="form-label"
-                    >
-                      Line spacing
-                    </label>
-
-                    <div class="range-control">
-
-                      <input
-                        id="quote-line-height"
-                        name="quoteLineHeight"
-                        class="form-range"
-                        type="range"
-                        min="0.9"
-                        max="2.2"
-                        step="0.05"
-                        value="1.25"
-                        data-module="quote"
-                        data-setting="lineHeight"
-                        aria-describedby="quote-line-height-output"
-                      >
-
-                      <output
-                        id="quote-line-height-output"
-                        class="range-output"
-                        for="quote-line-height"
-                      >
-                        1.25
-                      </output>
-
-                    </div>
-
-                  </div>
-
-
-                  <div class="form-field">
-
-                    <label
-                      for="quote-text-align"
-                      class="form-label"
-                    >
-                      Text alignment
-                    </label>
-
-                    <select
-                      id="quote-text-align"
-                      name="quoteTextAlign"
-                      class="form-control"
-                      data-module="quote"
-                      data-setting="textAlign"
-                    >
-
-                      <option value="left">
-                        बाएँ
-                      </option>
-
-                      <option value="center" selected>
-                        मध्य
-                      </option>
-
-                      <option value="right">
-                        दाएँ
-                      </option>
-
-                      <option value="justify">
-                        Justify
-                      </option>
-
-                    </select>
-
-                  </div>
-
-
-                  <div class="form-field">
-
-                    <label
-                      for="quote-position"
-                      class="form-label"
-                    >
-                      Text position
-                    </label>
-
-                    <select
-                      id="quote-position"
-                      name="quotePosition"
-                      class="form-control"
-                      data-module="quote"
-                      data-setting="position"
-                    >
-
-                      <option value="top">
-                        ऊपर
-                      </option>
-
-                      <option value="upper-middle">
-                        ऊपरी-मध्य
-                      </option>
-
-                      <option value="center" selected>
-                        मध्य
-                      </option>
-
-                      <option value="lower-middle">
-                        निचला-मध्य
-                      </option>
-
-                      <option value="bottom">
-                        नीचे
-                      </option>
-
-                    </select>
-
-                  </div>
-
-                </div>
-
-              </fieldset>
-
-
-              <fieldset class="control-group">
-
-                <legend class="control-group__legend">
-                  Text Color और Overlay
-                </legend>
-
-
-                <div class="form-grid form-grid--two">
-
-                  <div class="form-field">
-
-                    <label
-                      for="quote-text-color"
-                      class="form-label"
-                    >
-                      Text color
-                    </label>
-
-                    <input
-                      id="quote-text-color"
-                      name="quoteTextColor"
-                      class="form-color"
-                      type="color"
-                      value="#FFFFFF"
-                      data-module="quote"
-                      data-setting="textColor"
-                    >
-
-                  </div>
-
-
-                  <div class="form-field">
-
-                    <label
-                      for="quote-overlay-color"
-                      class="form-label"
-                    >
-                      Overlay color
-                    </label>
-
-                    <input
-                      id="quote-overlay-color"
-                      name="quoteOverlayColor"
-                      class="form-color"
-                      type="color"
-                      value="#000000"
-                      data-module="quote"
-                      data-setting="overlayColor"
-                    >
-
-                  </div>
-
-
-                  <div class="form-field">
-
-                    <label
-                      for="quote-overlay-opacity"
-                      class="form-label"
-                    >
-                      Overlay opacity
-                    </label>
-
-                    <div class="range-control">
-
-                      <input
-                        id="quote-overlay-opacity"
-                        name="quoteOverlayOpacity"
-                        class="form-range"
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="1"
-                        value="45"
-                        data-module="quote"
-                        data-setting="overlayOpacity"
-                        aria-describedby="quote-overlay-opacity-output"
-                      >
-
-                      <output
-                        id="quote-overlay-opacity-output"
-                        class="range-output"
-                        for="quote-overlay-opacity"
-                      >
-                        45%
-                      </output>
-
-                    </div>
-
-                  </div>
-
-
-                  <div class="form-field form-field--checkbox">
-
-                    <label
-                      class="check-control"
-                      for="quote-overlay-enabled"
-                    >
-
-                      <input
-                        id="quote-overlay-enabled"
-                        name="quoteOverlayEnabled"
-                        type="checkbox"
-                        checked
-                        data-module="quote"
-                        data-setting="overlayEnabled"
-                      >
-
-                      <span>
-                        Text overlay सक्रिय रखें
-                      </span>
-
-                    </label>
-
-                  </div>
-
-                </div>
-
-              </fieldset>
-
-
-              <div class="form-field form-field--checkbox">
-
-                <label
-                  class="check-control"
-                  for="quote-visible"
-                >
-
-                  <input
-                    id="quote-visible"
-                    name="quoteVisible"
-                    type="checkbox"
-                    checked
+              <div class="form-grid form-grid--two">
+                <div class="form-field">
+                  <label for="quote-language" class="form-label">भाषा</label>
+                  <select
+                    id="quote-language"
+                    class="form-control"
                     data-module="quote"
-                    data-setting="visible"
+                    data-setting="language"
                   >
+                    <option value="hi">हिंदी</option>
+                    <option value="sa">संस्कृत</option>
+                    <option value="sa-vedic">वैदिक संस्कृत</option>
+                    <option value="other">अन्य</option>
+                  </select>
+                </div>
 
-                  <span>
-                    Text Box Live Preview में दिखाई जाए
-                  </span>
+                <div class="form-field">
+                  <label for="quote-font-family" class="form-label">फ़ॉन्ट</label>
+                  <select
+                    id="quote-font-family"
+                    class="form-control"
+                    data-module="quote"
+                    data-setting="fontFamily"
+                  >
+                    <option value="system">System</option>
+                    <option value="serif">Serif</option>
+                    <option value="sans-serif">Sans-serif</option>
+                    <option value="monospace">Monospace</option>
+                  </select>
+                </div>
 
-                </label>
+                <div class="form-field">
+                  <label for="quote-font-size" class="form-label">Font size</label>
+                  <div class="range-control">
+                    <input
+                      id="quote-font-size"
+                      class="form-range"
+                      type="range"
+                      min="24"
+                      max="160"
+                      step="2"
+                      value="64"
+                      data-module="quote"
+                      data-setting="fontSize"
+                    >
+                    <output id="quote-font-size-output" class="range-output">64 px</output>
+                  </div>
+                </div>
 
+                <div class="form-field">
+                  <label for="quote-line-height" class="form-label">Line spacing</label>
+                  <div class="range-control">
+                    <input
+                      id="quote-line-height"
+                      class="form-range"
+                      type="range"
+                      min="0.9"
+                      max="2.2"
+                      step="0.05"
+                      value="1.25"
+                      data-module="quote"
+                      data-setting="lineHeight"
+                    >
+                    <output id="quote-line-height-output" class="range-output">1.25</output>
+                  </div>
+                </div>
+
+                <div class="form-field">
+                  <label for="quote-text-align" class="form-label">Alignment</label>
+                  <select
+                    id="quote-text-align"
+                    class="form-control"
+                    data-module="quote"
+                    data-setting="textAlign"
+                  >
+                    <option value="left">बाएँ</option>
+                    <option value="center" selected>मध्य</option>
+                    <option value="right">दाएँ</option>
+                    <option value="justify">Justify</option>
+                  </select>
+                </div>
+
+                <div class="form-field">
+                  <label for="quote-position" class="form-label">Position</label>
+                  <select
+                    id="quote-position"
+                    class="form-control"
+                    data-module="quote"
+                    data-setting="position"
+                  >
+                    <option value="top">ऊपर</option>
+                    <option value="upper-middle">ऊपरी-मध्य</option>
+                    <option value="center" selected>मध्य</option>
+                    <option value="lower-middle">निचला-मध्य</option>
+                    <option value="bottom">नीचे</option>
+                  </select>
+                </div>
+
+                <div class="form-field">
+                  <label for="quote-text-color" class="form-label">Text color</label>
+                  <input
+                    id="quote-text-color"
+                    class="form-color"
+                    type="color"
+                    value="#FFFFFF"
+                    data-module="quote"
+                    data-setting="textColor"
+                  >
+                </div>
+
+                <div class="form-field">
+                  <label for="quote-overlay-color" class="form-label">Overlay color</label>
+                  <input
+                    id="quote-overlay-color"
+                    class="form-color"
+                    type="color"
+                    value="#000000"
+                    data-module="quote"
+                    data-setting="overlayColor"
+                  >
+                </div>
+
+                <div class="form-field">
+                  <label for="quote-overlay-opacity" class="form-label">Overlay opacity</label>
+                  <div class="range-control">
+                    <input
+                      id="quote-overlay-opacity"
+                      class="form-range"
+                      type="range"
+                      min="0"
+                      max="100"
+                      value="45"
+                      data-module="quote"
+                      data-setting="overlayOpacity"
+                    >
+                    <output id="quote-overlay-opacity-output" class="range-output">45%</output>
+                  </div>
+                </div>
               </div>
 
-            </div>
+              <label class="check-control" for="quote-overlay-enabled">
+                <input
+                  id="quote-overlay-enabled"
+                  type="checkbox"
+                  checked
+                  data-module="quote"
+                  data-setting="overlayEnabled"
+                >
+                <span>Text overlay सक्रिय</span>
+              </label>
 
+              <label class="check-control" for="quote-visible">
+                <input
+                  id="quote-visible"
+                  type="checkbox"
+                  checked
+                  data-module="quote"
+                  data-setting="visible"
+                >
+                <span>Text Live Preview में दिखाएँ</span>
+              </label>
+            </div>
           </section>
 
-
-          <!-- ======================================================
-               04. MULTICOLOR TEXT
-               ====================================================== -->
+          <!-- MULTICOLOR -->
           <section
             id="multicolor-section"
             class="studio-section"
             data-module="quote"
             aria-labelledby="multicolor-section-title"
           >
-
             <header class="studio-section__header">
-
               <div>
-
-                <p class="studio-section__eyebrow">
-                  03 · Color Text
-                </p>
-
-                <h2
-                  id="multicolor-section-title"
-                  class="studio-section__title"
-                >
+                <p class="studio-section__eyebrow">03 · Color Text</p>
+                <h2 id="multicolor-section-title" class="studio-section__title">
                   मल्टी-कलर टेक्स्ट
                 </h2>
-
-                <p class="studio-section__description">
-                  Text के अलग शब्दों या segments को अलग रंगों में प्रस्तुत करने के लिए।
-                </p>
-
               </div>
-
             </header>
 
-
             <div class="studio-section__body">
-
-              <div class="form-field form-field--checkbox">
-
-                <label
-                  class="check-control"
-                  for="multicolor-enabled"
+              <label class="check-control" for="multicolor-enabled">
+                <input
+                  id="multicolor-enabled"
+                  type="checkbox"
+                  data-module="quote"
+                  data-setting="multicolorEnabled"
                 >
-
-                  <input
-                    id="multicolor-enabled"
-                    name="multicolorEnabled"
-                    type="checkbox"
-                    data-module="quote"
-                    data-setting="multicolorEnabled"
-                  >
-
-                  <span>
-                    मल्टी-कलर टेक्स्ट सक्रिय करें
-                  </span>
-
-                </label>
-
-              </div>
-
+                <span>मल्टी-कलर टेक्स्ट सक्रिय करें</span>
+              </label>
 
               <div class="form-grid form-grid--two">
-
                 <div class="form-field">
-
-                  <label
-                    for="multicolor-preset"
-                    class="form-label"
-                  >
-                    Color preset
-                  </label>
-
+                  <label for="multicolor-preset" class="form-label">Preset</label>
                   <select
                     id="multicolor-preset"
-                    name="multicolorPreset"
                     class="form-control"
                     data-module="quote"
                     data-setting="multicolorPreset"
                   >
-
-                    <option value="classic">
-                      Classic
-                    </option>
-
-                    <option value="saffron">
-                      Saffron Highlight
-                    </option>
-
-                    <option value="tricolor">
-                      Tricolor
-                    </option>
-
-                    <option value="pastel">
-                      Pastel
-                    </option>
-
-                    <option value="custom">
-                      Custom
-                    </option>
-
+                    <option value="classic">Classic</option>
+                    <option value="saffron">Saffron Highlight</option>
+                    <option value="tricolor">Tricolor</option>
+                    <option value="pastel">Pastel</option>
+                    <option value="custom">Custom</option>
                   </select>
-
                 </div>
 
-
                 <div class="form-field">
-
-                  <label
-                    for="multicolor-custom-color"
-                    class="form-label"
-                  >
+                  <label for="multicolor-custom-color" class="form-label">
                     Custom color
                   </label>
-
                   <input
                     id="multicolor-custom-color"
-                    name="multicolorCustomColor"
                     class="form-color"
                     type="color"
                     value="#FFD166"
                     data-module="quote"
                     data-setting="multicolorCustomColor"
                   >
-
                 </div>
-
               </div>
-
 
               <div
                 id="multicolor-items"
@@ -1173,199 +524,81 @@
                 data-module="quote"
                 data-container="multicolor-items"
                 aria-live="polite"
-                aria-describedby="multicolor-help"
-              >
-
-                <p class="empty-state">
-                  मल्टी-कलर mode सक्रिय करने के बाद text segments यहाँ दिखाई देंगे।
-                </p>
-
-              </div>
-
-
-              <p
-                id="multicolor-help"
-                class="form-help"
-              >
-                वास्तविक segment controls JavaScript module द्वारा बनाए जा सकते हैं।
-              </p>
-
+              ></div>
             </div>
-
           </section>
 
-
-          <!-- ======================================================
-               05. TTS / VOICE
-               ====================================================== -->
+          <!-- TTS -->
           <section
             id="tts-section"
             class="studio-section"
             data-module="tts"
             aria-labelledby="tts-section-title"
           >
-
             <header class="studio-section__header">
-
               <div>
-
-                <p class="studio-section__eyebrow">
-                  04 · Voice
-                </p>
-
-                <h2
-                  id="tts-section-title"
-                  class="studio-section__title"
-                >
-                  ब्राउज़र Voice / TTS
+                <p class="studio-section__eyebrow">04 · Voice</p>
+                <h2 id="tts-section-title" class="studio-section__title">
+                  Voice / TTS
                 </h2>
-
-                <p class="studio-section__description">
-                  ऊपर दिए गए Text Box को browser Speech Synthesis द्वारा पढ़ें।
-                </p>
-
               </div>
-
             </header>
 
-
             <div class="studio-section__body">
-
-
-              <div class="form-field form-field--checkbox">
-
-                <label
-                  class="check-control"
-                  for="tts-enabled"
+              <label class="check-control" for="tts-enabled">
+                <input
+                  id="tts-enabled"
+                  type="checkbox"
+                  data-module="tts"
+                  data-setting="enabled"
                 >
-
-                  <input
-                    id="tts-enabled"
-                    name="ttsEnabled"
-                    type="checkbox"
-                    data-module="tts"
-                    data-setting="enabled"
-                  >
-
-                  <span>
-                    Voice / TTS सक्रिय करें
-                  </span>
-
-                </label>
-
-              </div>
-
+                <span>Voice / TTS सक्रिय करें</span>
+              </label>
 
               <div class="form-grid form-grid--two">
-
                 <div class="form-field">
-
-                  <label
-                    for="tts-language"
-                    class="form-label"
-                  >
-                    TTS भाषा
-                  </label>
-
+                  <label for="tts-language" class="form-label">भाषा</label>
                   <select
                     id="tts-language"
-                    name="ttsLanguage"
                     class="form-control"
                     data-module="tts"
                     data-setting="language"
                   >
-
-                    <option value="hi-IN">
-                      हिंदी — hi-IN
-                    </option>
-
-                    <option value="sa-IN">
-                      संस्कृत — sa-IN
-                    </option>
-
-                    <option value="en-IN">
-                      English India — en-IN
-                    </option>
-
-                    <option value="auto">
-                      Auto
-                    </option>
-
+                    <option value="hi-IN">हिंदी — hi-IN</option>
+                    <option value="sa-IN">संस्कृत — sa-IN</option>
+                    <option value="en-IN">English India — en-IN</option>
+                    <option value="auto">Auto</option>
                   </select>
-
                 </div>
 
-
                 <div class="form-field">
-
-                  <label
-                    for="tts-mode"
-                    class="form-label"
-                  >
-                    वाचन mode
-                  </label>
-
+                  <label for="tts-mode" class="form-label">Mode</label>
                   <select
                     id="tts-mode"
-                    name="ttsMode"
                     class="form-control"
                     data-module="tts"
                     data-setting="mode"
                   >
-
-                    <option value="normal">
-                      सामान्य वाचन
-                    </option>
-
-                    <option value="lyrical">
-                      लयबद्ध / मधुर प्रयास
-                    </option>
-
-                    <option value="vedic">
-                      वैदिक / मंत्र-पाठ प्रयास
-                    </option>
-
+                    <option value="normal">सामान्य</option>
+                    <option value="lyrical">लयबद्ध</option>
+                    <option value="vedic">वैदिक</option>
                   </select>
-
                 </div>
 
-
                 <div class="form-field">
-
-                  <label
-                    for="tts-voice"
-                    class="form-label"
-                  >
-                    Voice
-                  </label>
-
+                  <label for="tts-voice" class="form-label">Voice</label>
                   <select
                     id="tts-voice"
-                    name="ttsVoice"
                     class="form-control"
                     data-module="tts"
                     data-setting="voice"
-                    aria-describedby="tts-support-message"
                   >
-
-                    <option value="">
-                      Voices उपलब्ध होने की प्रतीक्षा है…
-                    </option>
-
+                    <option value="">Voices लोड हो रही हैं…</option>
                   </select>
-
                 </div>
 
-
                 <div class="form-field form-field--actions">
-
-                  <span
-                    class="form-label"
-                    aria-hidden="true"
-                  >
-                    Voice list
-                  </span>
-
+                  <span class="form-label" aria-hidden="true">Voices</span>
                   <button
                     id="tts-refresh-voices"
                     class="button button--secondary"
@@ -1373,180 +606,83 @@
                     data-module="tts"
                     data-action="refresh-voices"
                   >
-                    Voices फिर से लोड करें
+                    Refresh
                   </button>
-
                 </div>
 
+                <div class="form-field">
+                  <label for="tts-rate" class="form-label">Rate</label>
+                  <div class="range-control">
+                    <input
+                      id="tts-rate"
+                      class="form-range"
+                      type="range"
+                      min="0.5"
+                      max="2"
+                      step="0.05"
+                      value="1"
+                      data-module="tts"
+                      data-setting="rate"
+                    >
+                    <output id="tts-rate-output" class="range-output">1.00×</output>
+                  </div>
+                </div>
+
+                <div class="form-field">
+                  <label for="tts-pitch" class="form-label">Pitch</label>
+                  <div class="range-control">
+                    <input
+                      id="tts-pitch"
+                      class="form-range"
+                      type="range"
+                      min="0"
+                      max="2"
+                      step="0.05"
+                      value="1"
+                      data-module="tts"
+                      data-setting="pitch"
+                    >
+                    <output id="tts-pitch-output" class="range-output">1.00</output>
+                  </div>
+                </div>
+
+                <div class="form-field">
+                  <label for="tts-volume" class="form-label">Volume</label>
+                  <div class="range-control">
+                    <input
+                      id="tts-volume"
+                      class="form-range"
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value="1"
+                      data-module="tts"
+                      data-setting="volume"
+                    >
+                    <output id="tts-volume-output" class="range-output">100%</output>
+                  </div>
+                </div>
               </div>
 
-
-              <div class="form-field form-field--checkbox">
-
-                <label
-                  class="check-control"
-                  for="tts-female-only"
+              <label class="check-control" for="tts-female-only">
+                <input
+                  id="tts-female-only"
+                  type="checkbox"
+                  data-module="tts"
+                  data-setting="femaleOnly"
                 >
-
-                  <input
-                    id="tts-female-only"
-                    name="ttsFemaleOnly"
-                    type="checkbox"
-                    data-module="tts"
-                    data-setting="femaleOnly"
-                  >
-
-                  <span>
-                    केवल उपलब्ध महिला voices दिखाने का प्रयास करें
-                  </span>
-
-                </label>
-
-              </div>
-
-
-              <fieldset class="control-group">
-
-                <legend class="control-group__legend">
-                  Voice controls
-                </legend>
-
-
-                <div class="form-grid form-grid--three">
-
-                  <div class="form-field">
-
-                    <label
-                      for="tts-rate"
-                      class="form-label"
-                    >
-                      Rate
-                    </label>
-
-                    <div class="range-control">
-
-                      <input
-                        id="tts-rate"
-                        name="ttsRate"
-                        class="form-range"
-                        type="range"
-                        min="0.5"
-                        max="2"
-                        step="0.05"
-                        value="1"
-                        data-module="tts"
-                        data-setting="rate"
-                        aria-describedby="tts-rate-output"
-                      >
-
-                      <output
-                        id="tts-rate-output"
-                        class="range-output"
-                        for="tts-rate"
-                      >
-                        1.00×
-                      </output>
-
-                    </div>
-
-                  </div>
-
-
-                  <div class="form-field">
-
-                    <label
-                      for="tts-pitch"
-                      class="form-label"
-                    >
-                      Pitch
-                    </label>
-
-                    <div class="range-control">
-
-                      <input
-                        id="tts-pitch"
-                        name="ttsPitch"
-                        class="form-range"
-                        type="range"
-                        min="0"
-                        max="2"
-                        step="0.05"
-                        value="1"
-                        data-module="tts"
-                        data-setting="pitch"
-                        aria-describedby="tts-pitch-output"
-                      >
-
-                      <output
-                        id="tts-pitch-output"
-                        class="range-output"
-                        for="tts-pitch"
-                      >
-                        1.00
-                      </output>
-
-                    </div>
-
-                  </div>
-
-
-                  <div class="form-field">
-
-                    <label
-                      for="tts-volume"
-                      class="form-label"
-                    >
-                      Volume
-                    </label>
-
-                    <div class="range-control">
-
-                      <input
-                        id="tts-volume"
-                        name="ttsVolume"
-                        class="form-range"
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value="1"
-                        data-module="tts"
-                        data-setting="volume"
-                        aria-describedby="tts-volume-output"
-                      >
-
-                      <output
-                        id="tts-volume-output"
-                        class="range-output"
-                        for="tts-volume"
-                      >
-                        100%
-                      </output>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-              </fieldset>
-
+                <span>उपलब्ध महिला voices को प्राथमिकता दें</span>
+              </label>
 
               <div
                 id="tts-support-message"
                 class="capability-message"
                 role="note"
                 aria-live="polite"
-              >
-                Speech Synthesis और voices की उपलब्धता browser/device पर निर्भर है।
-              </div>
+              ></div>
 
-
-              <div
-                class="button-row"
-                aria-label="Voice playback controls"
-              >
-
+              <div class="button-row">
                 <button
                   id="tts-play-button"
                   class="button button--primary"
@@ -1557,7 +693,6 @@
                 >
                   TTS चलाएँ
                 </button>
-
 
                 <button
                   id="tts-pause-button"
@@ -1570,7 +705,6 @@
                   Pause
                 </button>
 
-
                 <button
                   id="tts-resume-button"
                   class="button button--secondary"
@@ -1582,7 +716,6 @@
                   Resume
                 </button>
 
-
                 <button
                   id="tts-stop-button"
                   class="button button--secondary"
@@ -1593,245 +726,104 @@
                 >
                   Stop
                 </button>
-
               </div>
 
-
-              <p
-                id="tts-status"
-                class="status-text"
-                role="status"
-                aria-live="polite"
-              >
-                Voice स्थिति अभी उपलब्ध नहीं है।
+              <p id="tts-status" class="status-text" role="status" aria-live="polite">
+                Voice स्थिति उपलब्ध नहीं है।
               </p>
-
-
-              <p
-                id="tts-pronunciation-note"
-                class="form-help"
-              >
-                संस्कृत और वैदिक संस्कृत pronunciation उपलब्ध browser/device
-                voice engine पर निर्भर करेगा।
-              </p>
-
             </div>
-
           </section>
 
-
-          <!-- ======================================================
-               06. NEWS TICKER
-               ====================================================== -->
+          <!-- TICKER -->
           <section
             id="ticker-section"
             class="studio-section"
             data-module="ticker"
             aria-labelledby="ticker-section-title"
           >
-
             <header class="studio-section__header">
-
               <div>
-
-                <p class="studio-section__eyebrow">
-                  05 · Ticker
-                </p>
-
-                <h2
-                  id="ticker-section-title"
-                  class="studio-section__title"
-                >
-                  न्यूज़ टिकर
+                <p class="studio-section__eyebrow">05 · Ticker</p>
+                <h2 id="ticker-section-title" class="studio-section__title">
+                  News Ticker
                 </h2>
-
-                <p class="studio-section__description">
-                  एक headline Live Video Screen पर लगातार seamless scrolling ticker
-                  के रूप में दिखाई जाएगी।
-                </p>
-
               </div>
-
             </header>
 
-
             <div class="studio-section__body">
-
-
-              <div class="form-field form-field--checkbox">
-
-                <label
-                  class="check-control"
-                  for="ticker-enabled"
+              <label class="check-control" for="ticker-enabled">
+                <input
+                  id="ticker-enabled"
+                  type="checkbox"
+                  data-module="ticker"
+                  data-setting="enabled"
                 >
-
-                  <input
-                    id="ticker-enabled"
-                    name="tickerEnabled"
-                    type="checkbox"
-                    data-module="ticker"
-                    data-setting="enabled"
-                  >
-
-                  <span>
-                    न्यूज़ टिकर सक्रिय करें
-                  </span>
-
-                </label>
-
-              </div>
-
+                <span>न्यूज़ टिकर सक्रिय करें</span>
+              </label>
 
               <div class="form-field">
-
-                <label
-                  for="ticker-text"
-                  class="form-label"
-                >
-                  न्यूज़ headline
-                </label>
-
+                <label for="ticker-text" class="form-label">Headline</label>
                 <input
                   id="ticker-text"
-                  name="tickerText"
                   class="form-control"
                   type="text"
                   maxlength="500"
-                  placeholder="उदाहरण: आज की महत्वपूर्ण खबर…"
+                  placeholder="आज की महत्वपूर्ण खबर…"
                   data-module="ticker"
                   data-setting="headline"
-                  aria-describedby="ticker-text-help"
                 >
-
-                <p
-                  id="ticker-text-help"
-                  class="form-help"
-                >
-                  केवल एक headline दें। Ticker module इसे seamless infinite loop
-                  में चलाएगा।
-                </p>
-
               </div>
 
-
               <div class="form-grid form-grid--two">
-
                 <div class="form-field">
-
-                  <label
-                    for="ticker-position"
-                    class="form-label"
-                  >
-                    Ticker position
-                  </label>
-
+                  <label for="ticker-position" class="form-label">Position</label>
                   <select
                     id="ticker-position"
-                    name="tickerPosition"
                     class="form-control"
                     data-module="ticker"
                     data-setting="position"
                   >
-
-                    <option value="top">
-                      ऊपर
-                    </option>
-
-                    <option value="middle">
-                      मध्य
-                    </option>
-
-                    <option value="bottom" selected>
-                      नीचे
-                    </option>
-
+                    <option value="top">ऊपर</option>
+                    <option value="middle">मध्य</option>
+                    <option value="bottom" selected>नीचे</option>
                   </select>
-
                 </div>
 
-
                 <div class="form-field">
-
-                  <label
-                    for="ticker-direction"
-                    class="form-label"
-                  >
-                    Scrolling direction
-                  </label>
-
+                  <label for="ticker-direction" class="form-label">Direction</label>
                   <select
                     id="ticker-direction"
-                    name="tickerDirection"
                     class="form-control"
                     data-module="ticker"
                     data-setting="direction"
                   >
-
-                    <option value="rtl" selected>
-                      दाएँ से बाएँ
-                    </option>
-
-                    <option value="ltr">
-                      बाएँ से दाएँ
-                    </option>
-
+                    <option value="rtl" selected>दाएँ से बाएँ</option>
+                    <option value="ltr">बाएँ से दाएँ</option>
                   </select>
-
                 </div>
 
-
                 <div class="form-field">
-
-                  <label
-                    for="ticker-speed"
-                    class="form-label"
-                  >
-                    Speed
-                  </label>
-
+                  <label for="ticker-speed" class="form-label">Speed</label>
                   <div class="range-control">
-
                     <input
                       id="ticker-speed"
-                      name="tickerSpeed"
                       class="form-range"
                       type="range"
                       min="1"
                       max="20"
-                      step="1"
                       value="8"
                       data-module="ticker"
                       data-setting="speed"
-                      aria-describedby="ticker-speed-output"
                     >
-
-                    <output
-                      id="ticker-speed-output"
-                      class="range-output"
-                      for="ticker-speed"
-                    >
-                      8
-                    </output>
-
+                    <output id="ticker-speed-output" class="range-output">8</output>
                   </div>
-
                 </div>
 
-
                 <div class="form-field">
-
-                  <label
-                    for="ticker-font-size"
-                    class="form-label"
-                  >
-                    Font size
-                  </label>
-
+                  <label for="ticker-font-size" class="form-label">Font size</label>
                   <div class="range-control">
-
                     <input
                       id="ticker-font-size"
-                      name="tickerFontSize"
                       class="form-range"
                       type="range"
                       min="16"
@@ -1840,104 +832,47 @@
                       value="36"
                       data-module="ticker"
                       data-setting="fontSize"
-                      aria-describedby="ticker-font-size-output"
                     >
-
-                    <output
-                      id="ticker-font-size-output"
-                      class="range-output"
-                      for="ticker-font-size"
-                    >
-                      36 px
-                    </output>
-
+                    <output id="ticker-font-size-output" class="range-output">36 px</output>
                   </div>
-
                 </div>
 
-
                 <div class="form-field">
-
-                  <label
-                    for="ticker-text-color"
-                    class="form-label"
-                  >
-                    Text color
-                  </label>
-
+                  <label for="ticker-text-color" class="form-label">Text color</label>
                   <input
                     id="ticker-text-color"
-                    name="tickerTextColor"
                     class="form-color"
                     type="color"
                     value="#FFFFFF"
                     data-module="ticker"
                     data-setting="textColor"
                   >
-
                 </div>
 
-
                 <div class="form-field">
-
-                  <label
-                    for="ticker-background-color"
-                    class="form-label"
-                  >
-                    Background color
-                  </label>
-
+                  <label for="ticker-background-color" class="form-label">Background</label>
                   <input
                     id="ticker-background-color"
-                    name="tickerBackgroundColor"
                     class="form-color"
                     type="color"
                     value="#111111"
                     data-module="ticker"
                     data-setting="backgroundColor"
                   >
-
                 </div>
-
               </div>
 
+              <label class="check-control" for="ticker-bold">
+                <input
+                  id="ticker-bold"
+                  type="checkbox"
+                  checked
+                  data-module="ticker"
+                  data-setting="bold"
+                >
+                <span>Bold text</span>
+              </label>
 
-              <fieldset class="control-group">
-
-                <legend class="control-group__legend">
-                  Ticker appearance
-                </legend>
-
-                <div class="form-field form-field--checkbox">
-
-                  <label
-                    class="check-control"
-                    for="ticker-bold"
-                  >
-
-                    <input
-                      id="ticker-bold"
-                      name="tickerBold"
-                      type="checkbox"
-                      checked
-                      data-module="ticker"
-                      data-setting="bold"
-                    >
-
-                    <span>
-                      Bold text
-                    </span>
-
-                  </label>
-
-                </div>
-
-              </fieldset>
-
-
-              <!-- ==================================================
-                   TICKER RUNTIME HOST
-                   ================================================== -->
               <div
                 id="news-ticker"
                 class="news-ticker-host"
@@ -1946,171 +881,80 @@
                 aria-live="polite"
               ></div>
 
-
-              <p
-                id="ticker-status"
-                class="status-text"
-                role="status"
-                aria-live="polite"
-              >
+              <p id="ticker-status" class="status-text" role="status" aria-live="polite">
                 टिकर निष्क्रिय है।
               </p>
-
             </div>
-
           </section>
 
-
-          <!-- ======================================================
-               07. RECORDING / EXPORT
-               ====================================================== -->
+          <!-- RECORDING -->
           <section
             id="recording-section"
             class="studio-section"
             data-module="recorder"
             aria-labelledby="recording-section-title"
           >
-
             <header class="studio-section__header">
-
               <div>
-
-                <p class="studio-section__eyebrow">
-                  06 · Export
-                </p>
-
-                <h2
-                  id="recording-section-title"
-                  class="studio-section__title"
-                >
-                  Live Screen Recording और Export
+                <p class="studio-section__eyebrow">06 · Export</p>
+                <h2 id="recording-section-title" class="studio-section__title">
+                  Recording & Export
                 </h2>
-
-                <p class="studio-section__description">
-                  Live canvas composition को browser-supported MediaRecorder
-                  workflow से रिकॉर्ड करें।
-                </p>
-
               </div>
-
             </header>
 
-
             <div class="studio-section__body">
-
-
               <div class="recording-status-panel">
-
-                <span class="recording-status-panel__label">
-                  Recording time
-                </span>
-
+                <span class="recording-status-panel__label">Recording time</span>
                 <time
                   id="recording-timer"
                   class="recording-timer"
                   datetime="PT0S"
-                  aria-label="रिकॉर्डिंग समय"
                 >
                   00:00
                 </time>
-
               </div>
 
-
               <div class="form-grid form-grid--two">
-
                 <div class="form-field">
-
-                  <label
-                    for="recording-format"
-                    class="form-label"
-                  >
-                    Output format
-                  </label>
-
+                  <label for="recording-format" class="form-label">Format</label>
                   <select
                     id="recording-format"
-                    name="recordingFormat"
                     class="form-control"
                     data-module="recorder"
                     data-setting="format"
                   >
-
-                    <option value="auto" selected>
-                      Auto — उपलब्ध browser format
-                    </option>
-
-                    <option value="webm">
-                      WebM
-                    </option>
-
-                    <option value="mp4">
-                      MP4 — browser support होने पर
-                    </option>
-
+                    <option value="auto" selected>Auto</option>
+                    <option value="webm">WebM</option>
+                    <option value="mp4">MP4</option>
                   </select>
-
                 </div>
 
-
                 <div class="form-field">
-
-                  <label
-                    for="recording-quality"
-                    class="form-label"
-                  >
-                    Quality / Resolution
-                  </label>
-
+                  <label for="recording-quality" class="form-label">Resolution</label>
                   <select
                     id="recording-quality"
-                    name="recordingQuality"
                     class="form-control"
                     data-module="recorder"
                     data-setting="quality"
                   >
-
-                    <option value="source" selected>
-                      Canvas 1080 × 1920
-                    </option>
-
-                    <option value="720">
-                      720 × 1280
-                    </option>
-
-                    <option value="480">
-                      480 × 854
-                    </option>
-
+                    <option value="source" selected>1080 × 1920</option>
+                    <option value="720">720 × 1280</option>
+                    <option value="480">480 × 854</option>
                   </select>
-
                 </div>
-
               </div>
 
-
-              <div
-                class="compatibility-panel"
+              <p
+                id="export-support-message"
+                class="compatibility-panel__text"
                 role="note"
                 aria-live="polite"
               >
+                Export compatibility जाँची जा रही है।
+              </p>
 
-                <p
-                  id="export-support-message"
-                  class="compatibility-panel__text"
-                >
-                  Export compatibility browser की MediaRecorder और MIME type
-                  support पर निर्भर करेगी।
-                </p>
-
-              </div>
-
-
-              <div
-                class="button-row"
-                aria-label="Recording controls"
-              >
-
+              <div class="button-row">
                 <button
                   id="record-start-button"
                   class="button button--primary"
@@ -2122,7 +966,6 @@
                   Recording शुरू करें
                 </button>
 
-
                 <button
                   id="record-pause-button"
                   class="button button--secondary"
@@ -2131,9 +974,8 @@
                   data-action="pause"
                   disabled
                 >
-                  Recording Pause करें
+                  Pause
                 </button>
-
 
                 <button
                   id="record-resume-button"
@@ -2143,9 +985,8 @@
                   data-action="resume"
                   disabled
                 >
-                  Recording Resume करें
+                  Resume
                 </button>
-
 
                 <button
                   id="record-stop-button"
@@ -2155,9 +996,8 @@
                   data-action="stop"
                   disabled
                 >
-                  Recording Stop करें
+                  Stop
                 </button>
-
 
                 <button
                   id="record-download-button"
@@ -2167,11 +1007,9 @@
                   data-action="download"
                   disabled
                 >
-                  रिकॉर्डेड फ़ाइल डाउनलोड करें
+                  डाउनलोड
                 </button>
-
               </div>
-
 
               <p
                 id="recording-status"
@@ -2179,252 +1017,83 @@
                 role="status"
                 aria-live="polite"
               >
-                Recording के लिए Live Preview और browser capability तैयार होना आवश्यक है।
+                Recording के लिए Live Preview तैयार होना आवश्यक है।
               </p>
 
-
-              <p
-                id="recording-file-info"
-                class="form-help"
-                aria-live="polite"
-              >
-                रिकॉर्डिंग बनने के बाद फ़ाइल format, size और उपलब्ध विवरण यहाँ दिखेंगे।
-              </p>
-
+              <p id="recording-file-info" class="form-help" aria-live="polite"></p>
             </div>
-
           </section>
 
-
-          <!-- ======================================================
-               08. SYSTEM STATUS
-               ====================================================== -->
+          <!-- STATUS -->
           <section
             class="studio-section studio-section--status"
             aria-labelledby="global-status-title"
           >
-
             <header class="studio-section__header">
-
               <div>
-
-                <p class="studio-section__eyebrow">
-                  System
-                </p>
-
-                <h2
-                  id="global-status-title"
-                  class="studio-section__title"
-                >
-                  ऐप स्थिति और Notifications
+                <p class="studio-section__eyebrow">System</p>
+                <h2 id="global-status-title" class="studio-section__title">
+                  ऐप स्थिति
                 </h2>
-
               </div>
-
             </header>
 
-
             <div class="studio-section__body">
-
-
               <div
                 id="app-status"
                 class="notification notification--status"
                 role="status"
                 aria-live="polite"
-                aria-atomic="true"
               >
                 ऐप प्रारंभ होने की प्रतीक्षा में है।
               </div>
-
 
               <div
                 id="app-error"
                 class="notification notification--error"
                 role="alert"
-                aria-live="assertive"
-                aria-atomic="true"
                 hidden
               ></div>
-
 
               <div
                 id="app-success"
                 class="notification notification--success"
                 role="status"
-                aria-live="polite"
-                aria-atomic="true"
                 hidden
               ></div>
-
 
               <div
                 id="app-loading"
                 class="notification notification--loading"
                 role="status"
-                aria-live="polite"
-                aria-atomic="true"
                 hidden
               >
                 Processing चल रहा है…
               </div>
-
-
-              <!-- Capability checks remain on same page -->
-              <div class="capability-panel">
-
-                <h3 class="sidebar-card__title">
-                  Capability checks
-                </h3>
-
-
-                <ul class="support-list">
-
-                  <li class="support-list__item">
-
-                    <span class="support-list__label">
-                      Canvas
-                    </span>
-
-                    <span
-                      class="support-list__value"
-                      data-capability="canvas"
-                    >
-                      जाँच लंबित
-                    </span>
-
-                  </li>
-
-
-                  <li class="support-list__item">
-
-                    <span class="support-list__label">
-                      Speech Synthesis
-                    </span>
-
-                    <span
-                      class="support-list__value"
-                      data-capability="speech"
-                    >
-                      जाँच लंबित
-                    </span>
-
-                  </li>
-
-
-                  <li class="support-list__item">
-
-                    <span class="support-list__label">
-                      MediaRecorder
-                    </span>
-
-                    <span
-                      class="support-list__value"
-                      data-capability="media-recorder"
-                    >
-                      जाँच लंबित
-                    </span>
-
-                  </li>
-
-
-                  <li class="support-list__item">
-
-                    <span class="support-list__label">
-                      MP4
-                    </span>
-
-                    <span
-                      class="support-list__value"
-                      data-capability="mp4"
-                    >
-                      जाँच लंबित
-                    </span>
-
-                  </li>
-
-
-                  <li class="support-list__item">
-
-                    <span class="support-list__label">
-                      PWA
-                    </span>
-
-                    <span
-                      class="support-list__value"
-                      data-capability="pwa"
-                    >
-                      जाँच लंबित
-                    </span>
-
-                  </li>
-
-                </ul>
-
-              </div>
-
             </div>
-
           </section>
 
         </form>
-
       </div>
 
     </div>
-
   </main>
 
-
-  <!-- ============================================================
-       FOOTER
-       ============================================================ -->
-  <footer
-    class="app-footer"
-    data-ui-region="footer"
-  >
-
+  <footer class="app-footer">
     <div class="app-footer__inner">
+      <p class="app-footer__name">Swar Srijan Studio</p>
 
-      <div class="app-footer__brand">
+      <p>
+        Version:
+        <span id="app-version" data-app-version-source="runtime">
+          runtime
+        </span>
+      </p>
 
-        <p class="app-footer__name">
-          Swar Srijan Studio
-        </p>
-
-        <p class="app-footer__description">
-          Browser-based single-page studio for creating 9:16 short-form
-          video compositions with text, TTS, ticker and recording.
-        </p>
-
-      </div>
-
-
-      <div class="app-footer__meta">
-
-        <p>
-          संस्करण:
-          <span
-            id="app-version"
-            data-app-version-source="runtime"
-          >
-            runtime configuration
-          </span>
-        </p>
-
-        <p>
-          GitHub Pages / PWA deployment के लिए relative asset paths उपयोग किए गए हैं।
-        </p>
-
-        <p>
-          TTS voices, MediaRecorder codecs और MP4 availability browser/runtime
-          capabilities पर निर्भर है।
-        </p>
-
-      </div>
-
+      <p>
+        Browser compatibility के अनुसार TTS, MediaRecorder और export formats बदल सकते हैं।
+      </p>
     </div>
-
   </footer>
 
 </body>
